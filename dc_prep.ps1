@@ -35,7 +35,13 @@ function create_ad_ou {
 }
 
 function create_ad_groups { 
+    
+}
+
+function datev {
     New-ADGroup -Name "DATEVUSER" -SamAccountName DATEVUSER -GroupCategory Security -GroupScope Global -DisplayName "DATEVUSER" -Path "OU=Gruppen,OU=$customer_name,$domainname"
+    $wc = New-Object net.webclient
+    $wc.Downloadfile("https://download.datev.de/download/datevitfix/serverprep.exe", "C:\Users\$env:USERNAME\Downloads\serverprep.exe")
 }
 
 #check if successfull
@@ -56,4 +62,9 @@ function check {
 #run script as specified
 create_ad_ou
 create_ad_groups
+$confirmation = Read-Host "Is this going to be a DATEV Fileserver? [y/n]"
+while($confirmation -ne "n")
+{
+    if ($confirmation -eq 'y') {datev} else {$confirmation = Read-Host "Ready? [y/n]"}
+}
 check
