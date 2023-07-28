@@ -60,6 +60,9 @@ function check {
     if([adsi]::Exists("LDAP://OU=Benutzer,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Benutzer,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Benutzer,OU=$customer_name,$domainname creation failed"; $exitcode +1}
     if([adsi]::Exists("LDAP://OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Gruppen,OU=$customer_name,$domainname creation failed"; $exitcode +1}
     if([adsi]::Exists("LDAP://OU=Terminalserver,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Terminalserver,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Terminalserver,OU=$customer_name,$domainname creation failed"; $exitcode +1}
+    if ($datev -eq "y") {
+        if([adsi]::Exists("LDAP://CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Terminalserver,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Terminalserver,OU=$customer_name,$domainname creation failed"; $exitcode +1}
+    }
     if ($exitcode -eq 0) {
         Write-Host $(Get-Date)"[INFO]The Script encountered no errors."
     }
@@ -71,5 +74,5 @@ function check {
 #run script as specified
 create_ad_ou
 create_ad_groups
-
+if ($datev -eq "y") {datev}
 check
