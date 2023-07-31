@@ -23,6 +23,7 @@ if ($configfile -eq "True") {
     Write-Host $(Get-Date)"[INFO]Configfile found. Configuration is read from file"
     $customer_name = (Get-Content $configfilepath -TotalCount 1).Substring(16)
     $datev = (Get-Content $configfilepath -TotalCount 1).Substring(16)
+    $adconnect = (Get-Content $configfilepath -TotalCount 1).Substring(16)
 } 
 else {
     Write-Host $(Get-Date)"[INFO]No configfile found. Parameters have to be defined manually"
