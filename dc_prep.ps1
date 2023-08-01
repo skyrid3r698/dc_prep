@@ -20,13 +20,14 @@ $wc = New-Object net.webclient
 $configfilepath = "$($pwd.path)\dc_prep.conf"
 $configfile = Test-Path $configfilepath
 if ($configfile -eq "True") {
-    Write-Host $(Get-Date)"[INFO]Configfile found. Configuration is read from file"
+    Write-Host $(Get-Date)"[INFO] Configfile found. Configuration is read from file"
     $customer_name = (Get-Content $configfilepath -TotalCount 1).Substring(16)
     $datev = (Get-Content $configfilepath -TotalCount 1).Substring(16)
     $adconnect = (Get-Content $configfilepath -TotalCount 1).Substring(16)
+    $share_drive = (Get-Content $configfilepath -TotalCount 1).Substring(16)
 } 
 else {
-    Write-Host $(Get-Date)"[INFO]No configfile found. Parameters have to be defined manually"
+    Write-Host $(Get-Date)"[INFO] No configfile found. Parameters have to be defined manually"
     $customer_name = Read-Host "Customer Name"
     $datev = Read-Host "Is this going to be a DATEV Fileserver? [y/n]"
     while(1 -ne 2)
@@ -42,8 +43,13 @@ else {
         if ($adconnect -eq "n") {write-host "Azuer-AD-Connect is NOT going to be configured";break}
         else {$adconnect = Read-Host "Configure Azure-AD-Connect? [y/n]"}
     }
+    $share_drive = Read-Host "On which Drive are the SMB-Shares going to be saved? syntax: C:\"
 }
 
+
+function create_shares {
+    mkdir $share_drive\_FREIGABEN    
+}
 function create_ad_ou {
     New-ADOrganizationalUnit -Name $customer_name -Path $domainname
     New-ADOrganizationalUnit -Name Benutzer -Path "OU=$customer_name,$domainname"
@@ -51,14 +57,16 @@ function create_ad_ou {
     New-ADOrganizationalUnit -Name Terminalserver -Path "OU=$customer_name,$domainname"
 }
 
-function create_ad_groups { 
-    
+function create_ad_policies { 
+    New-GPO -Name Netzlaufwerke
+    New-GPO -Name EdgeDisableFirstRun
 }
 
 function datev {
     New-ADGroup -Name "DATEVUSER" -SamAccountName DATEVUSER -GroupCategory Security -GroupScope Global -DisplayName "DATEVUSER" -Path "OU=Gruppen,OU=$customer_name,$domainname"
     $wc.Downloadfile("https://download.datev.de/download/datevitfix/serverprep.exe", "C:\Users\$env:USERNAME\Downloads\serverprep.exe")
-
+    mkdir $share_drive\_FREIGABEN\WINDVSW1
+    mkdir $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB
 }
 
 function adconnect {
@@ -75,18 +83,19 @@ function check {
     if([adsi]::Exists("LDAP://OU=Terminalserver,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Terminalserver,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Terminalserver,OU=$customer_name,$domainname creation failed"; $exitcode +1}
     if ($datev -eq "y") { if([adsi]::Exists("LDAP://CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname creation failed"; $exitcode +1}}
     if ($adconnect -eq "y") { if([adsi]::Exists("LDAP://CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname creation failed"; $exitcode +1}}
-
+    if (Get-GPO -Name Netzlaufwerke -ne "" ) {Write-Host $(Get-Date)"[Info] GPO Netzlaufwerke successfully created"} else {Write-Host $(Get-Date)"[ERROR] GPO Netzlaufwerke creation failed"; $exitcode +1}
+    if (Get-GPO -Name EdgeDisableFirstRun -ne "" ) {Write-Host $(Get-Date)"[Info] GPO EdgeDisableFirstRun successfully created"} else {Write-Host $(Get-Date)"[ERROR] GPO EdgeDisableFirstRun creation failed"; $exitcode +1}
     if ($exitcode -eq 0) {
-        Write-Host $(Get-Date)"[INFO]The Script encountered no errors."
+        Write-Host $(Get-Date)"[INFO] The Script encountered no errors."
     }
     else {
-        Write-Host $(Get-Date)"[ERROR]The Script encountered $exitcode errors. Please check the Log" -ForegroundColor Red
+        Write-Host $(Get-Date)"[ERROR] The Script encountered $exitcode errors. Please check the Log" -ForegroundColor Red
     }
 }
 
 #run script as specified
 create_ad_ou
-create_ad_groups
+create_ad_policies
 if ($datev -eq "y") {datev}
 if ($adconnect -eq "y") {adconnect}
 check
