@@ -25,6 +25,7 @@ if ($configfile -eq "True") {
     $datev = (Get-Content $configfilepath -TotalCount 1).Substring(16)
     $adconnect = (Get-Content $configfilepath -TotalCount 1).Substring(16)
     $share_drive = (Get-Content $configfilepath -TotalCount 1).Substring(16)
+    $FSLogix = (Get-Content $configfilepath -TotalCount 1).Substring(16)
 } 
 else {
     Write-Host $(Get-Date)"[INFO] No configfile found. Parameters have to be defined manually"
@@ -39,9 +40,16 @@ else {
     $adconnect = Read-Host "Configure Azure-AD-Connect?"
     while(1 -ne 2)
     {
-        if ($adconnect -eq "y") {write-host "Azuer-AD-Connect is going to be configured";break} 
-        if ($adconnect -eq "n") {write-host "Azuer-AD-Connect is NOT going to be configured";break}
+        if ($adconnect -eq "y") {write-host "Azure-AD-Connect is going to be configured";break} 
+        if ($adconnect -eq "n") {write-host "Azure-AD-Connect is NOT going to be configured";break}
         else {$adconnect = Read-Host "Configure Azure-AD-Connect? [y/n]"}
+    }
+    $FSLogix = Read-Host "Configure FSLogix?"
+    while(1 -ne 2)
+    {
+        if ($FSLogix -eq "y") {write-host "FSLogix is going to be configured";break} 
+        if ($FSLogix -eq "n") {write-host "FSLogix is NOT going to be configured";break}
+        else {$FSLogix = Read-Host "Configure FSLogix? [y/n]"}
     }
     $share_drive = Read-Host "On which Drive are the SMB-Shares going to be saved? syntax: C:\"
 }
@@ -54,12 +62,21 @@ function create_ad_ou {
     New-ADOrganizationalUnit -Name $customer_name -Path $domainname
     New-ADOrganizationalUnit -Name Benutzer -Path "OU=$customer_name,$domainname"
     New-ADOrganizationalUnit -Name Gruppen -Path "OU=$customer_name,$domainname"
-    New-ADOrganizationalUnit -Name Terminalserver -Path "OU=$customer_name,$domainname"
+    New-ADOrganizationalUnit -Name Computer -Path "OU=$customer_name,$domainname"
+    New-ADOrganizationalUnit -Name Terminalserver -Path "OU=Computer,OU=$customer_name,$domainname"
+}
+
+function create_ad_centralstore {
+    copy-item C:\Windows\PolicyDefinitions \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\
 }
 
 function create_ad_policies { 
     New-GPO -Name Netzlaufwerke
+    New-GPLink -Name "Netzlaufwerke" -Target "OU=Benutzer,OU=$customer_name,$domainname"
     New-GPO -Name EdgeDisableFirstRun
+    New-GPLink -Name "EdgeDisableFirstRun" -Target "$domainname"
+    Set-GPRegistryValue -Name 'EdgeDisableFirstRun' -Key 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Edge' -ValueName 'hidefirstrunexperience' -Type DWord -Value 1
+    Set-GPRegistryValue -Name 'EdgeDisableFirstRun' -Key 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Edge' -ValueName 'showrecommendationsenabled' -Type DWord -Value 0
 }
 
 function datev {
@@ -74,13 +91,30 @@ function adconnect {
     $wc.Downloadfile("https://download.microsoft.com/download/B/0/0/B00291D0-5A83-4DE7-86F5-980BC00DE05A/AzureADConnect.msi", "C:\Users\$env:USERNAME\Downloads\AzureADConnect.exe")
 }
 
+function fslogix {
+    mkdir "$share_drive\_FREIGABEN\FSLogix_Container"
+    $wc.Downloadfile("https://download.microsoft.com/download/c/4/4/c44313c5-f04a-4034-8a22-967481b23975/FSLogix_Apps_2.9.8440.42104.zip", "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.exe")
+    New-GPO -Name FSLogix
+    New-GPLink -Name "FSLogix" -Target "OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname"
+    Set-GPRegistryValue -Name 'FSLogix' -Key 'HKEY_LOCAL_MACHINE\Software\fslogix\Logging' -ValueName 'LogFileKeepingPeriod' -Type DWord -Value 7
+    Set-GPRegistryValue -Name 'FSLogix' -Key 'HKEY_LOCAL_MACHINE\Software\fslogix\Profiles' -ValueName 'Enabled' -Type DWord -Value 1
+    Set-GPRegistryValue -Name 'FSLogix' -Key 'HKEY_LOCAL_MACHINE\Software\fslogix\Profiles' -ValueName 'IsDynamic' -Type DWord -Value 1
+    Set-GPRegistryValue -Name 'FSLogix' -Key 'HKEY_LOCAL_MACHINE\Software\fslogix\Profiles' -ValueName 'ProfileType' -Type DWord -Value 3
+    Set-GPRegistryValue -Name 'FSLogix' -Key 'HKEY_LOCAL_MACHINE\Software\fslogix\Profiles' -ValueName 'SizeInMBs' -Type DWord -Value 30000
+    Set-GPRegistryValue -Name 'FSLogix' -Key 'HKEY_LOCAL_MACHINE\Software\fslogix\Profiles' -ValueName 'VHDLocations' -Type SZ -Value "\\$([System.Net.Dns]::GetHostByName($env:computerName).HostName)\FSLogix_Container"
+    Set-GPRegistryValue -Name 'FSLogix' -Key 'HKEY_LOCAL_MACHINE\Software\fslogix\Profiles' -ValueName 'LockedRetryCount' -Type DWord -Value 12
+    Set-GPRegistryValue -Name 'FSLogix' -Key 'HKEY_LOCAL_MACHINE\Software\fslogix\Profiles' -ValueName 'VolumeType' -Type SZ -Value VHDX
+    Set-GPRegistryValue -Name 'FSLogix' -Key 'HKEY_LOCAL_MACHINE\Software\fslogix\Profiles' -ValueName 'FlipFlopProfileDirectoryName' -Type DWord -Value 1
+}
+
 #check if successfull
 function check {
     $exitcode = 0
     if([adsi]::Exists("LDAP://OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=$customer_name,$domainname creation failed"; $exitcode +1}
     if([adsi]::Exists("LDAP://OU=Benutzer,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Benutzer,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Benutzer,OU=$customer_name,$domainname creation failed"; $exitcode +1}
     if([adsi]::Exists("LDAP://OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Gruppen,OU=$customer_name,$domainname creation failed"; $exitcode +1}
-    if([adsi]::Exists("LDAP://OU=Terminalserver,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Terminalserver,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Terminalserver,OU=$customer_name,$domainname creation failed"; $exitcode +1}
+    if([adsi]::Exists("LDAP://OU=Computer,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Computer,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Computer,OU=$customer_name,$domainname creation failed"; $exitcode +1}
+    if([adsi]::Exists("LDAP://OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname creation failed"; $exitcode +1}
     if ($datev -eq "y") { if([adsi]::Exists("LDAP://CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname creation failed"; $exitcode +1}}
     if ($adconnect -eq "y") { if([adsi]::Exists("LDAP://CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname creation failed"; $exitcode +1}}
     if (Get-GPO -Name Netzlaufwerke -ne "" ) {Write-Host $(Get-Date)"[Info] GPO Netzlaufwerke successfully created"} else {Write-Host $(Get-Date)"[ERROR] GPO Netzlaufwerke creation failed"; $exitcode +1}
@@ -96,6 +130,8 @@ function check {
 #run script as specified
 create_ad_ou
 create_ad_policies
+create_ad_centralstore
 if ($datev -eq "y") {datev}
 if ($adconnect -eq "y") {adconnect}
+if ($FSLogix -eq "y") {fslogix}
 check
