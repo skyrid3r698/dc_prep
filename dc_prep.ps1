@@ -72,7 +72,7 @@ function create_ad_centralstore {
 
 function create_ad_policies { 
     New-GPO -Name Netzlaufwerke
-    New-GPLink -Name "Netzlaufwerke" -Target "OU=Benutzer,OU=$customer_name,$domainname"
+    New-GPLink -Name "Netzlaufwerke" -Target "$domainname"
     New-GPO -Name EdgeDisableFirstRun
     New-GPLink -Name "EdgeDisableFirstRun" -Target "$domainname"
     Set-GPRegistryValue -Name 'EdgeDisableFirstRun' -Key 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Edge' -ValueName 'hidefirstrunexperience' -Type DWord -Value 1
