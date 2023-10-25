@@ -21,11 +21,11 @@ $configfilepath = "$($pwd.path)\dc_prep.conf"
 $configfile = Test-Path $configfilepath
 if ($configfile -eq "True") {
     Write-Host $(Get-Date)"[INFO] Configfile found. Configuration is read from file"
-    $customer_name = (Get-Content $configfilepath -TotalCount 1).Substring(16)
-    $datev = (Get-Content $configfilepath -TotalCount 1).Substring(16)
-    $adconnect = (Get-Content $configfilepath -TotalCount 1).Substring(16)
-    $share_drive = (Get-Content $configfilepath -TotalCount 1).Substring(16)
-    $FSLogix = (Get-Content $configfilepath -TotalCount 1).Substring(16)
+    $customer_name = (Get-Content $configfilepath)[0].Substring(16)
+    $datev = (Get-Content $configfilepath)[1].Substring(16)
+    $adconnect = (Get-Content $configfilepath)[2].Substring(16)
+    $share_drive = (Get-Content $configfilepath)[3].Substring(16)
+    $FSLogix = (Get-Content $configfilepath)[4].Substring(16)
 } 
 else {
     Write-Host $(Get-Date)"[INFO] No configfile found. Parameters have to be defined manually"
