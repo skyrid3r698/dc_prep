@@ -51,7 +51,7 @@ else {
         if ($FSLogix -eq "n") {write-host "FSLogix is NOT going to be configured";break}
         else {$FSLogix = Read-Host "Configure FSLogix? [y/n]"}
     }
-    $share_drive = Read-Host "On which Drive are the SMB-Shares going to be saved? syntax: C:\"
+    $share_drive = Read-Host "On which Drive are the SMB-Shares going to be saved? syntax: C:"
 }
 
 
