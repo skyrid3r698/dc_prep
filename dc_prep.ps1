@@ -94,7 +94,7 @@ function adconnect {
 
 function fslogix {
     mkdir "$share_drive\_FREIGABEN\FSLogix_Container"
-    $wc.Downloadfile("https://download.microsoft.com/download/c/4/4/c44313c5-f04a-4034-8a22-967481b23975/FSLogix_Apps_2.9.8440.42104.zip", "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.exe")
+    $wc.Downloadfile("https://aka.ms/fslogix_download", "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.zip")
     New-GPO -Name FSLogix
     New-GPLink -Name "FSLogix" -Target "OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname"
     Set-GPRegistryValue -Name 'FSLogix' -Key 'HKEY_LOCAL_MACHINE\Software\fslogix\Logging' -ValueName 'LogFileKeepingPeriod' -Type DWord -Value 7
