@@ -67,7 +67,7 @@ function create_ad_ou {
 }
 
 function create_ad_centralstore {
-    copy-item C:\Windows\PolicyDefinitions \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\
+    copy-item C:\Windows\PolicyDefinitions \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\ -Recurse
 }
 
 function create_ad_policies { 
