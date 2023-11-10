@@ -62,11 +62,11 @@ function create_shares {
     mkdir $share_drive\_FREIGABEN    
 }
 function create_ad_ou {
-    New-ADOrganizationalUnit -Name $customer_name -Path $domainname
-    New-ADOrganizationalUnit -Name Benutzer -Path "OU=$customer_name,$domainname"
-    New-ADOrganizationalUnit -Name Gruppen -Path "OU=$customer_name,$domainname"
-    New-ADOrganizationalUnit -Name Computer -Path "OU=$customer_name,$domainname"
-    New-ADOrganizationalUnit -Name Terminalserver -Path "OU=Computer,OU=$customer_name,$domainname"
+    try {New-ADOrganizationalUnit -Name $customer_name -Path $domainname} catch {Write-Host "Either "OU=$customer_name,$domaeinname" already exists or an error occured creating it; $exitcode +1"}
+    try {New-ADOrganizationalUnit -Name Benutzer -Path "OU=$customer_name,$domainname"} catch {Write-Host "Either "OU=Benutzer,OU=$customer_name,$domainname" already exists or an error occured creating it; $exitcode +1"}
+    try {New-ADOrganizationalUnit -Name Gruppen -Path "OU=$customer_name,$domainname"} catch {Write-Host "Either "OU=Gruppen,OU=$customer_name,$domainname" already exists or an error occured creating it; $exitcode +1"}
+    try {New-ADOrganizationalUnit -Name Computer -Path "OU=$customer_name,$domainname"} catch {Write-Host "Either "OU=Computer,OU=$customer_name,$domainname" already exists or an error occured creating it; $exitcode +1"}
+    try {New-ADOrganizationalUnit -Name Terminalserver -Path "OU=Computer,OU=$customer_name,$domainname"} catch {Write-Host "Either "OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname" already exists or an error occured creating it; $exitcode +1"}
 }
 
 function create_ad_centralstore {
