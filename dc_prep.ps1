@@ -94,6 +94,16 @@ function adconnect {
 
 function fslogix {
     mkdir "$share_drive\_FREIGABEN\FSLogix_Container"
+    #check universial name for Everyone group and create SMB Share
+    $everyoneSID = [System.Security.Principal.SecurityIdentifier]::new('S-1-1-0')
+    $everyoneName = $everyoneSID.Translate([System.Security.Principal.NTAccount]).Value
+    $FSLogixShareParams = @{
+    Name = "FSLogix_Container"
+    Path = "$share_drive\_FREIGABEN\FSLogix_Container"
+    FullAccess = $everyoneName
+    }
+    New-SmbShare @FSLogixShareParams
+    #download FSLogix Apps
     $wc.Downloadfile("https://aka.ms/fslogix_download", "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.zip")
     Expand-Archive -LiteralPath "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.zip" -DestinationPath "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps"
     copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\FSLogix*\fslogix.admx \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions
