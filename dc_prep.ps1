@@ -54,6 +54,9 @@ else {
     $share_drive = Read-Host "On which Drive are the SMB-Shares going to be saved? syntax: C:"
 }
 
+# activate ad recyclebin
+Enable-ADOptionalFeature 'Recycle Bin Feature' -Scope ForestOrConfigurationSet -Target (Get-ADDomain).Forest -Confirm:$false
+
 
 function create_shares {
     mkdir $share_drive\_FREIGABEN    
@@ -143,6 +146,7 @@ function fslogix {
 #check if successfull
 function check {
     $exitcode = 0
+    if ((Get-ADOptionalFeature -Filter 'name -like "Recycle Bin Feature"').EnabledScopes) {Write-Host $(Get-Date)"[Info] Active Directory Recycle Bin successfully activated"} else {Write-Output $(Get-Date)"[ERROR] Active Directory Recycle Bin was not activated"}
     if([adsi]::Exists("LDAP://OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=$customer_name,$domainname creation failed"; $exitcode +1}
     if([adsi]::Exists("LDAP://OU=Benutzer,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Benutzer,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Benutzer,OU=$customer_name,$domainname creation failed"; $exitcode +1}
     if([adsi]::Exists("LDAP://OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Gruppen,OU=$customer_name,$domainname creation failed"; $exitcode +1}
