@@ -103,6 +103,24 @@ function fslogix {
     FullAccess = $everyoneName
     }
     New-SmbShare @FSLogixShareParams
+    #set NTFS ACLs for FSLogix Share
+    $FSLogixACL = Get-Acl -Path "$share_drive\_FREIGABEN\FSLogix_Container"
+    $FSLogixACL.SetAccessRuleProtection($true, $false)
+    $SYSTEMAccount = $([System.Security.Principal.SecurityIdentifier]::new('S-1-5-18')).Translate([System.Security.Principal.NTAccount]).Value
+    $CREATOROWNERAccount = $([System.Security.Principal.SecurityIdentifier]::new('S-1-3-0')).Translate([System.Security.Principal.NTAccount]).Value
+    $InheritanceFlag = [System.Security.AccessControl.InheritanceFlags]::ContainerInherit -bor [System.Security.AccessControl.InheritanceFlags]::ObjectInherit
+    $PropagationFlag0 = [System.Security.AccessControl.PropagationFlags]::InheritOnly
+    $PropagationFlag1 = [System.Security.AccessControl.PropagationFlags]::None
+    $SpecialRights = [System.Security.AccessControl.FileSystemRights]::ReadAndExecute -bor [System.Security.AccessControl.FileSystemRights]::AppendData -bor [System.Security.AccessControl.FileSystemRights]::CreateDirectories 
+    $FSLogixAccessRule0 = New-Object System.Security.AccessControl.FileSystemAccessRule("$CREATOROWNERAccount","FullControl","$InheritanceFlag","$PropagationFlag0","Allow")
+    $FSLogixAccessRule1 = New-Object System.Security.AccessControl.FileSystemAccessRule("$((Get-ADDomain).NetBIOSName)\Domänen-Admins","FullControl","$InheritanceFlag","$PropagationFlag1","Allow")
+    $FSLogixAccessRule2 = New-Object System.Security.AccessControl.FileSystemAccessRule("$((Get-ADDomain).NetBIOSName)\Domänen-Benutzer","$SpecialRights","Allow")
+    $FSLogixAccessRule3 = New-Object System.Security.AccessControl.FileSystemAccessRule("$SYSTEMAccount","FullControl","$InheritanceFlag","$PropagationFlag1","Allow")
+    $FSLogixACL.SetAccessRule($FSLogixAccessRule0)
+    $FSLogixACL.SetAccessRule($FSLogixAccessRule1)
+    $FSLogixACL.SetAccessRule($FSLogixAccessRule2)
+    $FSLogixACL.SetAccessRule($FSLogixAccessRule3)
+    Set-Acl -Path "$share_drive\_FREIGABEN\FSLogix_Container -AclObject" $FSLogixACL
     #download FSLogix Apps
     $wc.Downloadfile("https://aka.ms/fslogix_download", "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.zip")
     Expand-Archive -LiteralPath "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.zip" -DestinationPath "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps"
