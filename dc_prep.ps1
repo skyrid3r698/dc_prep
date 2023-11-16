@@ -131,7 +131,7 @@ function fslogix {
     copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\FSLogix*\fslogix.admx \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions
     copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\FSLogix*\fslogix.adml \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\de-DE
     copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\FSLogix*\fslogix.adml \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\en-US
-    #install FSLogix on every Terminalserver found in the AD
+    #install FSLogix on every Terminalserver found in the AD and add domainadmins to exclude group
     $serversWithRDSWithoutADDS = Get-ADComputer -Filter {OperatingSystem -like '*server*'} | ForEach-Object {
     $server = $_.Name
     $rdsInstalled = Get-WindowsFeature -ComputerName $server -Name "Remote-Desktop-Services" | Where-Object {$_.Installed -eq $true }
@@ -155,6 +155,7 @@ function fslogix {
             cmd /c $prog /install /quiet
             }
         }
+        Add-LocalGroupMember -Group "FSLogix Profile Exclude List" -Member "DOMAENE\Domänen-Admins" #FIXME: use universial name/guid for Member
     }
     #add FSLogix GPOs
     New-GPO -Name FSLogix
