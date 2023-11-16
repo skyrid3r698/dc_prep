@@ -125,12 +125,38 @@ function fslogix {
     $FSLogixACL.SetAccessRule($FSLogixAccessRule2)
     $FSLogixACL.SetAccessRule($FSLogixAccessRule3)
     Set-Acl -Path "$share_drive\_FREIGABEN\FSLogix_Container -AclObject" $FSLogixACL
-    #download FSLogix Apps
+    #download FSLogix Apps and add centralstore admx/adml
     $wc.Downloadfile("https://aka.ms/fslogix_download", "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.zip")
     Expand-Archive -LiteralPath "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.zip" -DestinationPath "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps"
     copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\FSLogix*\fslogix.admx \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions
     copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\FSLogix*\fslogix.adml \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\de-DE
     copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\FSLogix*\fslogix.adml \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\en-US
+    #install FSLogix on every Terminalserver found in the AD
+    $serversWithRDSWithoutADDS = Get-ADComputer -Filter {OperatingSystem -like '*server*'} | ForEach-Object {
+    $server = $_.Name
+    $rdsInstalled = Get-WindowsFeature -ComputerName $server -Name "Remote-Desktop-Services" | Where-Object {$_.Installed -eq $true }
+    $addsInstalled = Get-WindowsFeature -ComputerName $server -Name "AD-Domain-Services" | Where-Object {$_.Installed -eq $true }
+    if ($rdsInstalled -and -not $addsInstalled) {
+        $server
+        }
+    }
+    $serversWithRDSWithoutADDS
+    ForEach ($RDS in $serversWithRDSWithoutADDS) {
+        Invoke-Command -ComputerName WTS1 -ScriptBlock {
+        $random = random
+        $wc = New-Object net.webclient
+        $wc.Downloadfile("https://aka.ms/fslogix_download", "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.zip")
+        if (test-path "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps") {ren "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps" "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps_OLD_$random"}
+        Expand-Archive -LiteralPath "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.zip" -DestinationPath "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps"
+        Set-Location "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\*\x64\Release\"
+        $fsxinst = (get-childitem).name
+        $fsxinst
+        ForEach ($prog in $fsxinst) {
+            cmd /c $prog /install /quiet
+            }
+        }
+    }
+    #add FSLogix GPOs
     New-GPO -Name FSLogix
     New-GPLink -Name "FSLogix" -Target "OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname"
     Set-GPRegistryValue -Name 'FSLogix' -Key 'HKEY_LOCAL_MACHINE\Software\fslogix\Logging' -ValueName 'LogFileKeepingPeriod' -Type DWord -Value 7
