@@ -67,11 +67,11 @@ function create_shares {
     mkdir $share_drive\_FREIGABEN    
 }
 function create_ad_ou {
-    try {New-ADOrganizationalUnit -Name $customer_name -Path $domainname} catch {Write-Host "Either "OU=$customer_name,$domaeinname" already exists or an error occured creating it"; $exitcode +1}
-    try {New-ADOrganizationalUnit -Name Benutzer -Path "OU=$customer_name,$domainname"} catch {Write-Host "Either "OU=Benutzer,OU=$customer_name,$domainname" already exists or an error occured creating it"; $exitcode +1}
-    try {New-ADOrganizationalUnit -Name Gruppen -Path "OU=$customer_name,$domainname"} catch {Write-Host "Either "OU=Gruppen,OU=$customer_name,$domainname" already exists or an error occured creating it"; $exitcode +1}
-    try {New-ADOrganizationalUnit -Name Computer -Path "OU=$customer_name,$domainname"} catch {Write-Host "Either "OU=Computer,OU=$customer_name,$domainname" already exists or an error occured creating it"; $exitcode +1}
-    try {New-ADOrganizationalUnit -Name Terminalserver -Path "OU=Computer,OU=$customer_name,$domainname"} catch {Write-Host "Either "OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname" already exists or an error occured creating it"; $exitcode +1}
+    try {New-ADOrganizationalUnit -Name $customer_name -Path $domainname} catch {Write-Host "Either "OU=$customer_name,$domaeinname" already exists or an error occured creating it"; $exitcode ++}
+    try {New-ADOrganizationalUnit -Name Benutzer -Path "OU=$customer_name,$domainname"} catch {Write-Host "Either "OU=Benutzer,OU=$customer_name,$domainname" already exists or an error occured creating it"; $exitcode ++}
+    try {New-ADOrganizationalUnit -Name Gruppen -Path "OU=$customer_name,$domainname"} catch {Write-Host "Either "OU=Gruppen,OU=$customer_name,$domainname" already exists or an error occured creating it"; $exitcode ++}
+    try {New-ADOrganizationalUnit -Name Computer -Path "OU=$customer_name,$domainname"} catch {Write-Host "Either "OU=Computer,OU=$customer_name,$domainname" already exists or an error occured creating it"; $exitcode ++}
+    try {New-ADOrganizationalUnit -Name Terminalserver -Path "OU=Computer,OU=$customer_name,$domainname"} catch {Write-Host "Either "OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname" already exists or an error occured creating it"; $exitcode ++}
 }
 
 function create_ad_centralstore {
@@ -185,25 +185,25 @@ function fslogix {
     Set-GPRegistryValue -Name 'FSLogix' -Key 'HKEY_LOCAL_MACHINE\Software\fslogix\Profiles' -ValueName 'FlipFlopProfileDirectoryName' -Type DWord -Value 1 > $null
     }
     catch {
-    Write-Host $(Get-Date)"[ERROR] FSLogix Group Policy creation failed! please check and possibly recreate this GPO" -ForegroundColor Red; $exitcode +1
+    Write-Host $(Get-Date)"[ERROR] FSLogix Group Policy creation failed! please check and possibly recreate this GPO" -ForegroundColor Red; $exitcode ++
     }
 }
 
 #check if successfull
 function check {
     $exitcode = 0
-    if ((Get-ADOptionalFeature -Filter 'name -like "Recycle Bin Feature"').EnabledScopes) {Write-Host $(Get-Date)"[Info] Active Directory Recycle Bin successfully activated"} else {Write-Host $(Get-Date)"[ERROR] Active Directory Recycle Bin was not activated" -ForegroundColor Red; $exitcode +1}
-    if([adsi]::Exists("LDAP://OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $exitcode +1}
-    if([adsi]::Exists("LDAP://OU=Benutzer,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Benutzer,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Benutzer,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $exitcode +1}
-    if([adsi]::Exists("LDAP://OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Gruppen,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $exitcode +1}
-    if([adsi]::Exists("LDAP://OU=Computer,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Computer,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Computer,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $exitcode +1}
-    if([adsi]::Exists("LDAP://OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $exitcode +1}
-    if ($datev -eq "y") { if([adsi]::Exists("LDAP://CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $exitcode +1}}
-    if ($datev -eq "y") { if(test-path $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB) {Write-Host $(Get-Date)"[Info] Folder $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB successfully created"} else {Write-Host $(Get-Date)"Folder creation failed" -ForegroundColor Red; $exitcode +1}}
-    if ($adconnect -eq "y") { if([adsi]::Exists("LDAP://CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $exitcode +1}}
-    if ((Get-GPO -Name Netzlaufwerke) -ne "" ) {Write-Host $(Get-Date)"[Info] GPO Netzlaufwerke successfully created"} else {Write-Host $(Get-Date)"[ERROR] GPO Netzlaufwerke creation failed" -ForegroundColor Red; $exitcode +1}
-    if ((Get-GPO -Name EdgeDisableFirstRun) -ne "" ) {Write-Host $(Get-Date)"[Info] GPO EdgeDisableFirstRun successfully created"} else {Write-Host $(Get-Date)"[ERROR] GPO EdgeDisableFirstRun creation failed" -ForegroundColor Red; $exitcode +1}
-    if (test-path \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions) {Write-Host $(Get-Date)"[Info] centralstore successfully created"} else {Write-Host $(Get-Date)"[Info] centralstore successfully failed" -ForegroundColor Red; $exitcode +1}
+    if ((Get-ADOptionalFeature -Filter 'name -like "Recycle Bin Feature"').EnabledScopes) {Write-Host $(Get-Date)"[Info] Active Directory Recycle Bin successfully activated"} else {Write-Host $(Get-Date)"[ERROR] Active Directory Recycle Bin was not activated" -ForegroundColor Red; $exitcode ++}
+    if([adsi]::Exists("LDAP://OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $exitcode ++}
+    if([adsi]::Exists("LDAP://OU=Benutzer,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Benutzer,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Benutzer,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $exitcode ++}
+    if([adsi]::Exists("LDAP://OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Gruppen,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $exitcode ++}
+    if([adsi]::Exists("LDAP://OU=Computer,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Computer,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Computer,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $exitcode ++}
+    if([adsi]::Exists("LDAP://OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $exitcode ++}
+    if ($datev -eq "y") { if([adsi]::Exists("LDAP://CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $exitcode ++}}
+    if ($datev -eq "y") { if(test-path $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB) {Write-Host $(Get-Date)"[Info] Folder $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB successfully created"} else {Write-Host $(Get-Date)"Folder creation failed" -ForegroundColor Red; $exitcode ++}}
+    if ($adconnect -eq "y") { if([adsi]::Exists("LDAP://CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $exitcode ++}}
+    if ((Get-GPO -Name Netzlaufwerke) -ne "" ) {Write-Host $(Get-Date)"[Info] GPO Netzlaufwerke successfully created"} else {Write-Host $(Get-Date)"[ERROR] GPO Netzlaufwerke creation failed" -ForegroundColor Red; $exitcode ++}
+    if ((Get-GPO -Name EdgeDisableFirstRun) -ne "" ) {Write-Host $(Get-Date)"[Info] GPO EdgeDisableFirstRun successfully created"} else {Write-Host $(Get-Date)"[ERROR] GPO EdgeDisableFirstRun creation failed" -ForegroundColor Red; $exitcode ++}
+    if (test-path \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions) {Write-Host $(Get-Date)"[Info] centralstore successfully created"} else {Write-Host $(Get-Date)"[Info] centralstore successfully failed" -ForegroundColor Red; $exitcode ++}
     if ($exitcode -eq 0) {
         Write-Host $(Get-Date)"[INFO] The Script encountered no errors." -ForegroundColor Green
     }
