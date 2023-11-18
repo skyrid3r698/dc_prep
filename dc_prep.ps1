@@ -53,6 +53,11 @@ else {
     }
     $share_drive = Read-Host "On which Drive are the SMB-Shares going to be saved? syntax: C:"
 }
+#read extra needed variables
+
+$GRPDoaminAdmins = (Get-ADgroup -Identity "$((get-addomain).DomainSID.Value)-512").Name
+$GRPDomainUsers = (Get-ADgroup -Identity "$((get-addomain).DomainSID.Value)-513").Name
+
 
 # activate ad recyclebin
 Enable-ADOptionalFeature 'Recycle Bin Feature' -Scope ForestOrConfigurationSet -Target (Get-ADDomain).Forest -Confirm:$false
@@ -117,8 +122,8 @@ function fslogix {
     $PropagationFlag1 = [System.Security.AccessControl.PropagationFlags]::None
     $SpecialRights = [System.Security.AccessControl.FileSystemRights]::ReadAndExecute -bor [System.Security.AccessControl.FileSystemRights]::AppendData -bor [System.Security.AccessControl.FileSystemRights]::CreateDirectories 
     $FSLogixAccessRule0 = New-Object System.Security.AccessControl.FileSystemAccessRule("$CREATOROWNERAccount","FullControl","$InheritanceFlag","$PropagationFlag0","Allow")
-    $FSLogixAccessRule1 = New-Object System.Security.AccessControl.FileSystemAccessRule("$((Get-ADDomain).NetBIOSName)\Domänen-Admins","FullControl","$InheritanceFlag","$PropagationFlag1","Allow")
-    $FSLogixAccessRule2 = New-Object System.Security.AccessControl.FileSystemAccessRule("$((Get-ADDomain).NetBIOSName)\Domänen-Benutzer","$SpecialRights","Allow")
+    $FSLogixAccessRule1 = New-Object System.Security.AccessControl.FileSystemAccessRule("$GRPDomainAdmins,"FullControl","$InheritanceFlag","$PropagationFlag1","Allow")
+    $FSLogixAccessRule2 = New-Object System.Security.AccessControl.FileSystemAccessRule("$GRPDomainUsers","$SpecialRights","Allow")
     $FSLogixAccessRule3 = New-Object System.Security.AccessControl.FileSystemAccessRule("$SYSTEMAccount","FullControl","$InheritanceFlag","$PropagationFlag1","Allow")
     $FSLogixACL.SetAccessRule($FSLogixAccessRule0)
     $FSLogixACL.SetAccessRule($FSLogixAccessRule1)
@@ -158,7 +163,7 @@ function fslogix {
         }
         $RDS_DN = (Get-ADObject -Filter "Name -eq '$RDS'").DistinguishedName
         Move-ADObject -Identity "$RDS_DN" -TargetPath "OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname"
-        Add-LocalGroupMember -Group "FSLogix Profile Exclude List" -Member "DOMAENE\Domänen-Admins" #FIXME: use universial name/guid for Member
+        Add-LocalGroupMember -Group "FSLogix Profile Exclude List" -Member "$GRPDomainAdmins"
     }
     #add FSLogix GPOs
     try {
