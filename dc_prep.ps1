@@ -55,7 +55,7 @@ else {
 }
 #read extra needed variables
 
-$GRPDoaminAdmins = (Get-ADgroup -Identity "$((get-addomain).DomainSID.Value)-512").Name
+$GRPDomainAdmins = (Get-ADgroup -Identity "$((get-addomain).DomainSID.Value)-512").Name
 $GRPDomainUsers = (Get-ADgroup -Identity "$((get-addomain).DomainSID.Value)-513").Name
 
 
