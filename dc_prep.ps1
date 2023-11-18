@@ -80,10 +80,10 @@ function create_ad_centralstore {
 
 function create_ad_policies { 
     try {
-    New-GPO -Name Netzlaufwerke
-    New-GPLink -Name "Netzlaufwerke" -Target "$domainname"
-    New-GPO -Name EdgeDisableFirstRun | Out-Null
-    New-GPLink -Name "EdgeDisableFirstRun" -Target "$domainname"
+    New-GPO -Name Netzlaufwerke > $null
+    New-GPLink -Name "Netzlaufwerke" -Target "$domainname" > $null
+    New-GPO -Name EdgeDisableFirstRun | Out-Null > $null
+    New-GPLink -Name "EdgeDisableFirstRun" -Target "$domainname" > $null
     Set-GPRegistryValue -Name 'EdgeDisableFirstRun' -Key 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Edge' -ValueName 'hidefirstrunexperience' -Type DWord -Value 1
     Set-GPRegistryValue -Name 'EdgeDisableFirstRun' -Key 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Edge' -ValueName 'showrecommendationsenabled' -Type DWord -Value 0
     }
