@@ -127,7 +127,7 @@ function fslogix {
     $PropagationFlag1 = [System.Security.AccessControl.PropagationFlags]::None
     $SpecialRights = [System.Security.AccessControl.FileSystemRights]::ReadAndExecute -bor [System.Security.AccessControl.FileSystemRights]::AppendData -bor [System.Security.AccessControl.FileSystemRights]::CreateDirectories 
     $FSLogixAccessRule0 = New-Object System.Security.AccessControl.FileSystemAccessRule("$CREATOROWNERAccount","FullControl","$InheritanceFlag","$PropagationFlag0","Allow")
-    $FSLogixAccessRule1 = New-Object System.Security.AccessControl.FileSystemAccessRule("$GRPDomainAdmins,"FullControl","$InheritanceFlag","$PropagationFlag1","Allow")
+    $FSLogixAccessRule1 = New-Object System.Security.AccessControl.FileSystemAccessRule("$GRPDomainAdmins","FullControl","$InheritanceFlag","$PropagationFlag1","Allow")
     $FSLogixAccessRule2 = New-Object System.Security.AccessControl.FileSystemAccessRule("$GRPDomainUsers","$SpecialRights","Allow")
     $FSLogixAccessRule3 = New-Object System.Security.AccessControl.FileSystemAccessRule("$SYSTEMAccount","FullControl","$InheritanceFlag","$PropagationFlag1","Allow")
     $FSLogixACL.SetAccessRule($FSLogixAccessRule0)
