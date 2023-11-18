@@ -1,4 +1,4 @@
-#start logging
+e #start logging
 $null = Start-Transcript -Append $env:TEMP\dc_prep.log
 Write-Host $(Get-Date)"[INFO]Start Logging to $env:TEMP\dc_prep.log"
 
@@ -70,7 +70,7 @@ Enable-ADOptionalFeature 'Recycle Bin Feature' -Scope ForestOrConfigurationSet -
 
 
 function create_shares {
-    if (Test-Path $share_drive\_FREIGABEN) {Write-Host "debug: $share_drive\_FREIGABEN already exists"} {mkdir $share_drive\_FREIGABEN}
+    if (Test-Path $share_drive\_FREIGABEN) {Write-Host "debug: $share_drive\_FREIGABEN already exists"} else {mkdir $share_drive\_FREIGABEN}
 }
 function create_ad_ou {
     try {New-ADOrganizationalUnit -Name $customer_name -Path $domainname} catch {Write-Host "Either "OU=$customer_name,$domaeinname" already exists or an error occured creating it"; $exitcode ++}
@@ -102,8 +102,8 @@ function datev {
     try {New-ADGroup -Name "DATEVUSER" -SamAccountName DATEVUSER -GroupCategory Security -GroupScope Global -DisplayName "DATEVUSER" -Path "OU=Gruppen,OU=$customer_name,$domainname"} 
     catch {Move-ADObject -Identity $((get-adgroup DATEVUSER).ObjectGUID | ForEach{$_.GUID}) -TargetPath "OU=Gruppen,OU=$customer_name,$domainname"}
     $wc.Downloadfile("https://download.datev.de/download/datevitfix/serverprep.exe", "C:\Users\$env:USERNAME\Downloads\serverprep.exe")
-    if (Test-Path $share_drive\_FREIGABEN\WINDVSW1) {Write-Host "debug: $share_drive\_FREIGABEN\WINDVSW1 already exists"} {mkdir $share_drive\_FREIGABEN\WINDVSW1}
-    if (Test-Path $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB) {Write-Host "debug: $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB already exists"} {mkdir $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB}
+    if (Test-Path $share_drive\_FREIGABEN\WINDVSW1) {Write-Host "debug: $share_drive\_FREIGABEN\WINDVSW1 already exists"} else {mkdir $share_drive\_FREIGABEN\WINDVSW1}
+    if (Test-Path $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB) {Write-Host "debug: $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB already exists"} else {mkdir $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB}
     
 }
 
@@ -113,7 +113,7 @@ function adconnect {
 }
 
 function fslogix {
-    if (Test-Path $share_drive\_FREIGABEN\FSLogix_Container) {Write-Host "debug: $share_drive\_FREIGABEN\FSLogix_Container already exists"} {mkdir $share_drive\_FREIGABEN\FSLogix_Container}
+    if (Test-Path $share_drive\_FREIGABEN\FSLogix_Container) {Write-Host "debug: $share_drive\_FREIGABEN\FSLogix_Container already exists"} else {mkdir $share_drive\_FREIGABEN\FSLogix_Container}
     #check universial name for Everyone group and create SMB Share
     $everyoneSID = [System.Security.Principal.SecurityIdentifier]::new('S-1-1-0')
     $everyoneName = $everyoneSID.Translate([System.Security.Principal.NTAccount]).Value
