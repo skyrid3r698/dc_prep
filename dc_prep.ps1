@@ -60,7 +60,13 @@ $GRPDomainUsers = (Get-ADgroup -Identity "$((get-addomain).DomainSID.Value)-513"
 
 
 # activate ad recyclebin
+if ((Get-ADOptionalFeature -Filter 'name -like "Recycle Bin Feature"').EnabledScopes) {
+Write-Host "debug: ActiceDirectory Recycle Bin already activated"
+}
+else {
 Enable-ADOptionalFeature 'Recycle Bin Feature' -Scope ForestOrConfigurationSet -Target (Get-ADDomain).Forest -Confirm:$false
+}
+
 
 
 function create_shares {
