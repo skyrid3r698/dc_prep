@@ -79,14 +79,19 @@ function create_ad_centralstore {
 }
 
 function create_ad_policies { 
-    New-GPO -Name Netzlaufwerke | Out-Null
+    try {
+    New-GPO -Name Netzlaufwerke
     New-GPLink -Name "Netzlaufwerke" -Target "$domainname"
     New-GPO -Name EdgeDisableFirstRun | Out-Null
     New-GPLink -Name "EdgeDisableFirstRun" -Target "$domainname"
     Set-GPRegistryValue -Name 'EdgeDisableFirstRun' -Key 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Edge' -ValueName 'hidefirstrunexperience' -Type DWord -Value 1
     Set-GPRegistryValue -Name 'EdgeDisableFirstRun' -Key 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Edge' -ValueName 'showrecommendationsenabled' -Type DWord -Value 0
+    }
+    catch {
+    {Write-Host $(Get-Date)"[ERROR] The creation of one or more GPOs has failed. Please check Log" -ForegroundColor Red}
+    }
 }
-
+   $FSLogixAccessRule0 
 function datev {
     try {New-ADGroup -Name "DATEVUSER" -SamAccountName DATEVUSER -GroupCategory Security -GroupScope Global -DisplayName "DATEVUSER" -Path "OU=Gruppen,OU=$customer_name,$domainname"} 
     catch {Move-ADObject -Identity $((get-adgroup DATEVUSER).ObjectGUID | ForEach{$_.GUID}) -TargetPath "OU=Gruppen,OU=$customer_name,$domainname"}
