@@ -1,4 +1,4 @@
-e #start logging
+#start logging
 $null = Start-Transcript -Append $env:TEMP\dc_prep.log
 Write-Host $(Get-Date)"[INFO]Start Logging to $env:TEMP\dc_prep.log"
 
