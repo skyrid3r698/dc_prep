@@ -90,8 +90,8 @@ function create_ad_policies {
     New-GPLink -Name "Netzlaufwerke" -Target "$domainname" > $null
     New-GPO -Name EdgeDisableFirstRun | Out-Null > $null
     New-GPLink -Name "EdgeDisableFirstRun" -Target "$domainname" > $null
-    Set-GPRegistryValue -Name 'EdgeDisableFirstRun' -Key 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Edge' -ValueName 'hidefirstrunexperience' -Type DWord -Value 1
-    Set-GPRegistryValue -Name 'EdgeDisableFirstRun' -Key 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Edge' -ValueName 'showrecommendationsenabled' -Type DWord -Value 0
+    Set-GPRegistryValue -Name 'EdgeDisableFirstRun' -Key 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Edge' -ValueName 'hidefirstrunexperience' -Type DWord -Value 1 > $null
+    Set-GPRegistryValue -Name 'EdgeDisableFirstRun' -Key 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Edge' -ValueName 'showrecommendationsenabled' -Type DWord -Value 0 > $null
     }
     catch {
     {Write-Host $(Get-Date)"[ERROR] The creation of one or more GPOs has failed. Please check Log" -ForegroundColor Red}
