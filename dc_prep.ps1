@@ -131,7 +131,7 @@ function fslogix {
     copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\FSLogix*\fslogix.admx \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions
     copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\FSLogix*\fslogix.adml \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\de-DE
     copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\FSLogix*\fslogix.adml \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\en-US
-    #install FSLogix on every Terminalserver found in the AD and add domainadmins to exclude group
+    #Find every Terminalserver in the AD 
     $serversWithRDSWithoutADDS = Get-ADComputer -Filter {OperatingSystem -like '*server*'} | ForEach-Object {
     $server = $_.Name
     $rdsInstalled = Get-WindowsFeature -ComputerName $server -Name "Remote-Desktop-Services" | Where-Object {$_.Installed -eq $true }
@@ -141,8 +141,11 @@ function fslogix {
         }
     }
     $serversWithRDSWithoutADDS
+    #Install FSLogix on every Terminalserver and add domainadmins to exclude group. And move TS to OU
     ForEach ($RDS in $serversWithRDSWithoutADDS) {
-        Invoke-Command -ComputerName WTS1 -ScriptBlock {
+        $RDS_DN = (Get-ADObject -Filter "Name -eq '$RDS'").DistinguishedName
+        Move-ADObject -Identity "$RDS_DN" -TargetPath "OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname"
+        Invoke-Command -ComputerName $RDS -ScriptBlock {
         $random = random
         $wc = New-Object net.webclient
         $wc.Downloadfile("https://aka.ms/fslogix_download", "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.zip")
