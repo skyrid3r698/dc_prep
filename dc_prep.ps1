@@ -147,6 +147,7 @@ function fslogix {
     copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\FSLogix*\fslogix.admx \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions
     copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\FSLogix*\fslogix.adml \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\de-DE
     copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\FSLogix*\fslogix.adml \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\en-US
+    Remove-Item "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps" -Recurse
     #Find every Terminalserver in the AD 
     $serversWithRDSWithoutADDS = Get-ADComputer -Filter {OperatingSystem -like '*server*'} | ForEach-Object {
     $server = $_.Name
@@ -162,17 +163,17 @@ function fslogix {
         $RDS_DN = (Get-ADObject -Filter "Name -eq '$RDS'").DistinguishedName
         Move-ADObject -Identity "$RDS_DN" -TargetPath "OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname"
         Invoke-Command -ComputerName $RDS -ScriptBlock {
-        $random = random
         $wc = New-Object net.webclient
         $wc.Downloadfile("https://aka.ms/fslogix_download", "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.zip")
-        if (test-path "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps") {ren "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps" "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps_OLD_$random"}
         Expand-Archive -LiteralPath "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.zip" -DestinationPath "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps"
         Set-Location "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\*\x64\Release\"
         $fsxinst = (get-childitem).name
         $fsxinst
         ForEach ($prog in $fsxinst) {
             cmd /c $prog /install /quiet
+            start-sleep 5
             }
+        Remove-Item "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps" -Recurse
         Add-LocalGroupMember -Group "FSLogix Profile Exclude List" -Member "$Using:GRPDomainAdmins"
         }
     }
