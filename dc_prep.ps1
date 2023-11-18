@@ -143,8 +143,6 @@ function fslogix {
     $serversWithRDSWithoutADDS
     #Install FSLogix on every Terminalserver and add domainadmins to exclude group. And move TS to OU
     ForEach ($RDS in $serversWithRDSWithoutADDS) {
-        $RDS_DN = (Get-ADObject -Filter "Name -eq '$RDS'").DistinguishedName
-        Move-ADObject -Identity "$RDS_DN" -TargetPath "OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname"
         Invoke-Command -ComputerName $RDS -ScriptBlock {
         $random = random
         $wc = New-Object net.webclient
@@ -158,6 +156,8 @@ function fslogix {
             cmd /c $prog /install /quiet
             }
         }
+        $RDS_DN = (Get-ADObject -Filter "Name -eq '$RDS'").DistinguishedName
+        Move-ADObject -Identity "$RDS_DN" -TargetPath "OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname"
         Add-LocalGroupMember -Group "FSLogix Profile Exclude List" -Member "DOMAENE\Domänen-Admins" #FIXME: use universial name/guid for Member
     }
     #add FSLogix GPOs
