@@ -57,6 +57,8 @@ else {
 
 $GRPDomainAdmins = (Get-ADgroup -Identity "$((get-addomain).DomainSID.Value)-512").Name
 $GRPDomainUsers = (Get-ADgroup -Identity "$((get-addomain).DomainSID.Value)-513").Name
+$existingGPO = (get-gpo -All).DisplayName
+$existingGroups = (Get-ADGroup -Filter *).Name
 
 
 # activate ad recyclebin
@@ -81,26 +83,41 @@ function create_ad_ou {
 }
 
 function create_ad_centralstore {
-    copy-item C:\Windows\PolicyDefinitions \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\ -Recurse
+    if (test-path \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions) {Write-Host "debug: centralstore already exists, skipping.."} else {copy-item C:\Windows\PolicyDefinitions \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\ -Recurse}
 }
 
 function create_ad_policies { 
     try {
+    if ($existingGPO -like "Netzlaufwerke") {
+    Write-Host "debug: gpo Netzlaufwerke already exists, creation skipped"
+    }
+    else {
     New-GPO -Name Netzlaufwerke > $null
     New-GPLink -Name "Netzlaufwerke" -Target "$domainname" > $null
+    }
+    if ($existingGPO -like "EdgeDisableFirstRun") {
+    Write-Host "debug: gpo EdgeDisableFirstRun already exists, creation skipped"
+    }
+    else {
     New-GPO -Name EdgeDisableFirstRun | Out-Null > $null
     New-GPLink -Name "EdgeDisableFirstRun" -Target "$domainname" > $null
     Set-GPRegistryValue -Name 'EdgeDisableFirstRun' -Key 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Edge' -ValueName 'hidefirstrunexperience' -Type DWord -Value 1 > $null
     Set-GPRegistryValue -Name 'EdgeDisableFirstRun' -Key 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Edge' -ValueName 'showrecommendationsenabled' -Type DWord -Value 0 > $null
     }
+    }
     catch {
     {Write-Host $(Get-Date)"[ERROR] The creation of one or more GPOs has failed. Please check Log" -ForegroundColor Red}
     }
 }
-   $FSLogixAccessRule0 
+
 function datev {
-    try {New-ADGroup -Name "DATEVUSER" -SamAccountName DATEVUSER -GroupCategory Security -GroupScope Global -DisplayName "DATEVUSER" -Path "OU=Gruppen,OU=$customer_name,$domainname"} 
-    catch {Move-ADObject -Identity $((get-adgroup DATEVUSER).ObjectGUID | ForEach{$_.GUID}) -TargetPath "OU=Gruppen,OU=$customer_name,$domainname"}
+    if ($existingGroups -like "DATEVUSER") {
+    Move-ADObject -Identity $((get-adgroup DATEVUSER).ObjectGUID | ForEach{$_.GUID}) -TargetPath "OU=Gruppen,OU=$customer_name,$domainname"
+    Write-Host "debug: DATEVUSER already exists and is going to be moved"
+    }
+    else {
+    New-ADGroup -Name "DATEVUSER" -SamAccountName DATEVUSER -GroupCategory Security -GroupScope Global -DisplayName "DATEVUSER" -Path "OU=Gruppen,OU=$customer_name,$domainname"
+    }
     $wc.Downloadfile("https://download.datev.de/download/datevitfix/serverprep.exe", "C:\Users\$env:USERNAME\Downloads\serverprep.exe")
     if (Test-Path $share_drive\_FREIGABEN\WINDVSW1) {Write-Host "debug: $share_drive\_FREIGABEN\WINDVSW1 already exists"} else {mkdir $share_drive\_FREIGABEN\WINDVSW1}
     if (Test-Path $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB) {Write-Host "debug: $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB already exists"} else {mkdir $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB}
@@ -108,7 +125,12 @@ function datev {
 }
 
 function adconnect {
+    if ($existingGroups -like "M365-AD-Connect") {
+    Write-Host "debug: M365-AD-Connect already exists"
+    }
+    else {
     New-ADGroup -Name "M365-AD-Connect" -SamAccountName M365-AD-Connect -GroupCategory Security -GroupScope Global -DisplayName "M365-AD-Connect" -Path "OU=Gruppen,OU=$customer_name,$domainname"
+    }
     $wc.Downloadfile("https://download.microsoft.com/download/B/0/0/B00291D0-5A83-4DE7-86F5-980BC00DE05A/AzureADConnect.msi", "C:\Users\$env:USERNAME\Downloads\AzureADConnect.exe")
 }
 
