@@ -59,6 +59,8 @@ $GRPDomainAdmins = (Get-ADgroup -Identity "$((get-addomain).DomainSID.Value)-512
 $GRPDomainUsers = (Get-ADgroup -Identity "$((get-addomain).DomainSID.Value)-513").Name
 $existingGPO = (get-gpo -All).DisplayName
 $existingGroups = (Get-ADGroup -Filter *).Name
+$SYSTEMAccount = $([System.Security.Principal.SecurityIdentifier]::new('S-1-5-18')).Translate([System.Security.Principal.NTAccount]).Value
+$CREATOROWNERAccount = $([System.Security.Principal.SecurityIdentifier]::new('S-1-3-0')).Translate([System.Security.Principal.NTAccount]).Value
 
 
 # activate ad recyclebin
@@ -125,7 +127,35 @@ function datev {
     $wc.Downloadfile("https://download.datev.de/download/datevitfix/serverprep.exe", "C:\Users\$env:USERNAME\Downloads\serverprep.exe")
     if (Test-Path $share_drive\_FREIGABEN\WINDVSW1) {Write-Host "debug: $share_drive\_FREIGABEN\WINDVSW1 already exists"} else {mkdir $share_drive\_FREIGABEN\WINDVSW1}
     if (Test-Path $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB) {Write-Host "debug: $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB already exists"} else {mkdir $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB}
-    
+    #create WINDVSW1 Share
+    $GRPAdministrators = (get-adgroup -Identity S-1-5-32-544).Name
+    $DATEVShareParams = @{
+    Name = "WINDVSW1"
+    Path = "$share_drive\_FREIGABEN\WINDVSW1"
+    ChangeAccess = "$domaeinname\DATEVUSER"
+    FullAccess = $GRPAdministrators
+    }
+    New-SmbShare @DATEVShareParams
+    #set ACLs for WINDVSW1
+    $DATEVACL = Get-Acl -Path "$share_drive\_FREIGABEN\WINDVSW1"
+    $DATEVACL.SetAccessRuleProtection($true, $false)
+    $InheritanceFlagDATEV = [System.Security.AccessControl.InheritanceFlags]::ContainerInherit -bor [System.Security.AccessControl.InheritanceFlags]::ObjectInherit
+    $InheritanceFlag2DATEV = [System.Security.AccessControl.InheritanceFlags]::ContainerInherit 
+    $InheritanceFlag3DATEV = [System.Security.AccessControl.InheritanceFlags]::ObjectInherit
+    $PropagationFlag0DATEV = [System.Security.AccessControl.PropagationFlags]::InheritOnly
+    $PropagationFlag1DATEV = [System.Security.AccessControl.PropagationFlags]::None
+    $SpecialRightsDATEV = [System.Security.AccessControl.FileSystemRights]::ReadAndExecute -bor [System.Security.AccessControl.FileSystemRights]::AppendData -bor [System.Security.AccessControl.FileSystemRights]::CreateDirectories
+    $DATEVAccessRule0 = New-Object System.Security.AccessControl.FileSystemAccessRule("$CREATOROWNERAccount","FullControl","$InheritanceFlagDATEV","$PropagationFlag0DATEV","Allow")
+    $DATEVAccessRule1 = New-Object System.Security.AccessControl.FileSystemAccessRule("$GRPAdministrators","FullControl","$InheritanceFlagDATEV","$PropagationFlag1DATEV","Allow")
+    $DATEVAccessRule2 = New-Object System.Security.AccessControl.FileSystemAccessRule("$domainname\DATEVUSER","$SpecialRightsDATEV","$InheritanceFlag3DATEV","$PropagationFlag0DATEV","Allow")
+    $DATEVAccessRule3 = New-Object System.Security.AccessControl.FileSystemAccessRule("$domainname\DATEVUSER","Modify","$InheritanceFlag2DATEV","$PropagationFlag1DATEV","Allow")
+    $DATEVAccessRule4 = New-Object System.Security.AccessControl.FileSystemAccessRule("$SYSTEMAccount","FullControl","$InheritanceFlagDATEV","$PropagationFlag1DATEV","Allow")
+    $DATEVACL.SetAccessRule($DATEVAccessRule0)
+    $DATEVACL.SetAccessRule($DATEVAccessRule1)
+    $DATEVACL.SetAccessRule($DATEVAccessRule2)
+    $DATEVACL.AddAccessRule($DATEVAccessRule3)
+    $DATEVACL.SetAccessRule($DATEVAccessRule4)
+    Set-Acl -Path "$share_drive\_FREIGABEN\WINDVSW1 -AclObject" $DATEVACL
 }
 
 function adconnect {
@@ -152,8 +182,6 @@ function fslogix {
     #set NTFS ACLs for FSLogix Share
     $FSLogixACL = Get-Acl -Path "$share_drive\_FREIGABEN\FSLogix_Container"
     $FSLogixACL.SetAccessRuleProtection($true, $false)
-    $SYSTEMAccount = $([System.Security.Principal.SecurityIdentifier]::new('S-1-5-18')).Translate([System.Security.Principal.NTAccount]).Value
-    $CREATOROWNERAccount = $([System.Security.Principal.SecurityIdentifier]::new('S-1-3-0')).Translate([System.Security.Principal.NTAccount]).Value
     $InheritanceFlag = [System.Security.AccessControl.InheritanceFlags]::ContainerInherit -bor [System.Security.AccessControl.InheritanceFlags]::ObjectInherit
     $PropagationFlag0 = [System.Security.AccessControl.PropagationFlags]::InheritOnly
     $PropagationFlag1 = [System.Security.AccessControl.PropagationFlags]::None
@@ -166,7 +194,7 @@ function fslogix {
     $FSLogixACL.SetAccessRule($FSLogixAccessRule1)
     $FSLogixACL.SetAccessRule($FSLogixAccessRule2)
     $FSLogixACL.SetAccessRule($FSLogixAccessRule3)
-    Set-Acl -Path "$share_drive\_FREIGABEN\FSLogix_Container -AclObject" $FSLogixACL
+    Set-Acl -Path "$share_drive\_FREIGABEN\FSLogix_Container" -AclObject $FSLogixACL
     #download FSLogix Apps and add centralstore admx/adml
     $wc.Downloadfile("https://aka.ms/fslogix_download", "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.zip")
     Expand-Archive -LiteralPath "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.zip" -DestinationPath "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps" -Force
