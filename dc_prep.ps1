@@ -155,7 +155,7 @@ function datev {
     $DATEVACL.SetAccessRule($DATEVAccessRule2)
     $DATEVACL.AddAccessRule($DATEVAccessRule3)
     $DATEVACL.SetAccessRule($DATEVAccessRule4)
-    Set-Acl -Path "$share_drive\_FREIGABEN\WINDVSW1 -AclObject" $DATEVACL
+    Set-Acl -Path "$share_drive\_FREIGABEN\WINDVSW1" -AclObject $DATEVACL
 }
 
 function adconnect {
