@@ -53,8 +53,8 @@ else {
     }
     $share_drive = Read-Host "On which Drive are the SMB-Shares going to be saved? syntax: C:"
 }
-#read extra needed variables
 
+#read extra needed variables
 $GRPDomainAdmins = (Get-ADgroup -Identity "$((get-addomain).DomainSID.Value)-512").Name
 $GRPDomainUsers = (Get-ADgroup -Identity "$((get-addomain).DomainSID.Value)-513").Name
 $existingGPO = (get-gpo -All).DisplayName
@@ -70,7 +70,6 @@ Enable-ADOptionalFeature 'Recycle Bin Feature' -Scope ForestOrConfigurationSet -
 }
 
 
-
 function create_shares {
     if (Test-Path $share_drive\_FREIGABEN) {Write-Host "debug: $share_drive\_FREIGABEN already exists"} else {mkdir $share_drive\_FREIGABEN}
 }
@@ -80,6 +79,11 @@ function create_ad_ou {
     try {New-ADOrganizationalUnit -Name Gruppen -Path "OU=$customer_name,$domainname"} catch {Write-Host "Either "OU=Gruppen,OU=$customer_name,$domainname" already exists or an error occured creating it"; $exitcode ++}
     try {New-ADOrganizationalUnit -Name Computer -Path "OU=$customer_name,$domainname"} catch {Write-Host "Either "OU=Computer,OU=$customer_name,$domainname" already exists or an error occured creating it"; $exitcode ++}
     try {New-ADOrganizationalUnit -Name Terminalserver -Path "OU=Computer,OU=$customer_name,$domainname"} catch {Write-Host "Either "OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname" already exists or an error occured creating it"; $exitcode ++}
+    #if MP-OU Systemvariable exists change it to new OU
+    if ([System.Environment]::GetEnvironmentVariable("MP-OU") -eq $null) {} 
+    else {
+    [System.Environment]::SetEnvironmentVariable("OU=$customer_name,$domaeinname",[System.EnvironmentVariableTarget]::Machine)
+    }
 }
 
 function create_ad_centralstore {
@@ -229,6 +233,7 @@ function check {
     if([adsi]::Exists("LDAP://OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Gruppen,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $exitcode ++}
     if([adsi]::Exists("LDAP://OU=Computer,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Computer,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Computer,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $exitcode ++}
     if([adsi]::Exists("LDAP://OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $exitcode ++}
+    if ([System.Environment]::GetEnvironmentVariable("MP-OUs") -eq $null) {} else {if ([System.Environment]::GetEnvironmentVariable("MP-OU") -eq OU=$customer_name,$domaeinname) {Write-Host $(Get-Date)"[Info] Systemvariable MP-OU successfully set to OU=$customer_name,$domainname"} else {Write-Host $(Get-Date)"[ERROR] setting Systemvariable MP-OU to OU=$customer_name,$domainname failed" -ForegroundColor Red; $exitcode ++}}
     if ($datev -eq "y") { if([adsi]::Exists("LDAP://CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $exitcode ++}}
     if ($datev -eq "y") { if(test-path $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB) {Write-Host $(Get-Date)"[Info] Folder $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB successfully created"} else {Write-Host $(Get-Date)"Folder creation failed" -ForegroundColor Red; $exitcode ++}}
     if ($adconnect -eq "y") { if([adsi]::Exists("LDAP://CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $exitcode ++}}
