@@ -29,7 +29,7 @@ if ($configfile -eq "True") {
         if ($adconnect -eq "n") {write-host "please set correct customer name in configfile";pause;exit}
         else {$adconnect = Read-Host "Customer name is set to $customer_name. Are you sure you want to configure your main OU with that name? [y/n]"}
     }
-    Write-Host 
+    }
     $datev = (Get-Content $configfilepath)[1].Substring(16)
     $adconnect = (Get-Content $configfilepath)[2].Substring(16)
     $share_drive = (Get-Content $configfilepath)[3].Substring(16)
