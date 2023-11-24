@@ -63,6 +63,8 @@ else {
 }
 
 #read extra needed variables
+$domainnameshort = (Get-ADDomain).NetBIOSName
+$GRPAdministrators = (get-adgroup -Identity S-1-5-32-544).Name
 $GRPDomainAdmins = (Get-ADgroup -Identity "$((get-addomain).DomainSID.Value)-512").Name
 $GRPDomainUsers = (Get-ADgroup -Identity "$((get-addomain).DomainSID.Value)-513").Name
 $existingGPO = (get-gpo -All).DisplayName
@@ -84,7 +86,7 @@ function create_shares {
     if (Test-Path $share_drive\_FREIGABEN) {Write-Host "debug: $share_drive\_FREIGABEN already exists"} else {mkdir $share_drive\_FREIGABEN}
 }
 function create_ad_ou {
-    try {New-ADOrganizationalUnit -Name $customer_name -Path $domainname} catch {Write-Host "Either "OU=$customer_name,$domaeinname" already exists or an error occured creating it"; $exitcode ++}
+    try {New-ADOrganizationalUnit -Name $customer_name -Path $domainname} catch {Write-Host "Either "OU=$customer_name,$domainname" already exists or an error occured creating it"; $exitcode ++}
     try {New-ADOrganizationalUnit -Name Benutzer -Path "OU=$customer_name,$domainname"} catch {Write-Host "Either "OU=Benutzer,OU=$customer_name,$domainname" already exists or an error occured creating it"; $exitcode ++}
     try {New-ADOrganizationalUnit -Name Gruppen -Path "OU=$customer_name,$domainname"} catch {Write-Host "Either "OU=Gruppen,OU=$customer_name,$domainname" already exists or an error occured creating it"; $exitcode ++}
     try {New-ADOrganizationalUnit -Name Computer -Path "OU=$customer_name,$domainname"} catch {Write-Host "Either "OU=Computer,OU=$customer_name,$domainname" already exists or an error occured creating it"; $exitcode ++}
@@ -92,7 +94,7 @@ function create_ad_ou {
     #if MP-OU Systemvariable exists change it to new OU
     if ([System.Environment]::GetEnvironmentVariable("MP-OU") -eq $null) {} 
     else {
-    [System.Environment]::SetEnvironmentVariable("OU=$customer_name,$domaeinname",[System.EnvironmentVariableTarget]::Machine)
+    [System.Environment]::SetEnvironmentVariable("OU=$customer_name,$domainname",[System.EnvironmentVariableTarget]::Machine)
     }
 }
 
@@ -133,21 +135,20 @@ function datev {
     New-ADGroup -Name "DATEVUSER" -SamAccountName DATEVUSER -GroupCategory Security -GroupScope Global -DisplayName "DATEVUSER" -Path "OU=Gruppen,OU=$customer_name,$domainname"
     }
     $wc.Downloadfile("https://download.datev.de/download/datevitfix/serverprep.exe", "C:\Users\$env:USERNAME\Downloads\serverprep.exe")
-    if (Test-Path $share_drive\_FREIGABEN\WINDVSW1) {Write-Host "debug: $share_drive\_FREIGABEN\WINDVSW1 already exists"} else {mkdir $share_drive\_FREIGABEN\WINDVSW1}
-    if (Test-Path $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB) {Write-Host "debug: $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB already exists"} else {mkdir $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB}
+    if (Test-Path $share_drive\_FREIGABEN\WINDVSW1) {Write-Host "debug: $share_drive\_FREIGABEN\WINDVSW1 already exists"} else {mkdir $share_drive\_FREIGABEN\WINDVSW1 > $null}
+    if (Test-Path $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB) {Write-Host "debug: $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB already exists"} else {mkdir $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB > $null}
     #create WINDVSW1 Share
     if (Test-Path \\$env:COMPUTERNAME\WINDVSW1) {
         Write-Host "debug: Share \\$env:COMPUTERNAME\WINDVSW1 already exists"
         }
         else {
-        $GRPAdministrators = (get-adgroup -Identity S-1-5-32-544).Name
         $DATEVShareParams = @{
         Name = "WINDVSW1"
         Path = "$share_drive\_FREIGABEN\WINDVSW1"
-        ChangeAccess = "$domaeinname\DATEVUSER"
+        ChangeAccess = "$domainnameshort\DATEVUSER"
         FullAccess = $GRPAdministrators
         }
-        New-SmbShare @DATEVShareParams
+        New-SmbShare @DATEVShareParams > $null
         }
     #set ACLs for WINDVSW1
     $DATEVACL = Get-Acl -Path "$share_drive\_FREIGABEN\WINDVSW1"
@@ -160,8 +161,8 @@ function datev {
     $SpecialRightsDATEV = [System.Security.AccessControl.FileSystemRights]::ReadAndExecute -bor [System.Security.AccessControl.FileSystemRights]::AppendData -bor [System.Security.AccessControl.FileSystemRights]::CreateDirectories
     $DATEVAccessRule0 = New-Object System.Security.AccessControl.FileSystemAccessRule("$CREATOROWNERAccount","FullControl","$InheritanceFlagDATEV","$PropagationFlag0DATEV","Allow")
     $DATEVAccessRule1 = New-Object System.Security.AccessControl.FileSystemAccessRule("$GRPAdministrators","FullControl","$InheritanceFlagDATEV","$PropagationFlag1DATEV","Allow")
-    $DATEVAccessRule2 = New-Object System.Security.AccessControl.FileSystemAccessRule("$domainname\DATEVUSER","$SpecialRightsDATEV","$InheritanceFlag3DATEV","$PropagationFlag0DATEV","Allow")
-    $DATEVAccessRule3 = New-Object System.Security.AccessControl.FileSystemAccessRule("$domainname\DATEVUSER","Modify","$InheritanceFlag2DATEV","$PropagationFlag1DATEV","Allow")
+    $DATEVAccessRule2 = New-Object System.Security.AccessControl.FileSystemAccessRule("$domainnameshort\DATEVUSER","$SpecialRightsDATEV","$InheritanceFlag3DATEV","$PropagationFlag0DATEV","Allow")
+    $DATEVAccessRule3 = New-Object System.Security.AccessControl.FileSystemAccessRule("$domainnameshort\DATEVUSER","Modify","$InheritanceFlag2DATEV","$PropagationFlag1DATEV","Allow")
     $DATEVAccessRule4 = New-Object System.Security.AccessControl.FileSystemAccessRule("$SYSTEMAccount","FullControl","$InheritanceFlagDATEV","$PropagationFlag1DATEV","Allow")
     $DATEVACL.SetAccessRule($DATEVAccessRule0)
     $DATEVACL.SetAccessRule($DATEVAccessRule1)
@@ -195,7 +196,7 @@ function fslogix {
         Path = "$share_drive\_FREIGABEN\FSLogix_Container"
         FullAccess = $everyoneName
         }
-        New-SmbShare @FSLogixShareParams
+        New-SmbShare @FSLogixShareParams > $null
         }
     #set NTFS ACLs for FSLogix Share
     $FSLogixACL = Get-Acl -Path "$share_drive\_FREIGABEN\FSLogix_Container"
@@ -290,7 +291,7 @@ function check {
     if([adsi]::Exists("LDAP://OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Gruppen,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $exitcode ++}
     if([adsi]::Exists("LDAP://OU=Computer,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Computer,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Computer,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $exitcode ++}
     if([adsi]::Exists("LDAP://OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $exitcode ++}
-    if ([System.Environment]::GetEnvironmentVariable("MP-OUs") -eq $null) {} else {if ([System.Environment]::GetEnvironmentVariable("MP-OU") -eq "OU=$customer_name,$domaeinname") {Write-Host $(Get-Date)"[Info] Systemvariable MP-OU successfully set to OU=$customer_name,$domainname"} else {Write-Host $(Get-Date)"[ERROR] setting Systemvariable MP-OU to OU=$customer_name,$domainname failed" -ForegroundColor Red; $exitcode ++}}
+    if ([System.Environment]::GetEnvironmentVariable("MP-OUs") -eq $null) {} else {if ([System.Environment]::GetEnvironmentVariable("MP-OU") -eq "OU=$customer_name,$domainname") {Write-Host $(Get-Date)"[Info] Systemvariable MP-OU successfully set to OU=$customer_name,$domainname"} else {Write-Host $(Get-Date)"[ERROR] setting Systemvariable MP-OU to OU=$customer_name,$domainname failed" -ForegroundColor Red; $exitcode ++}}
     if ($datev -eq "y") { if([adsi]::Exists("LDAP://CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $exitcode ++}}
     if ($datev -eq "y") { if(test-path $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB) {Write-Host $(Get-Date)"[Info] Folder $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB successfully created"} else {Write-Host $(Get-Date)"Folder creation failed" -ForegroundColor Red; $exitcode ++}}
     if ($adconnect -eq "y") { if([adsi]::Exists("LDAP://CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $exitcode ++}}
