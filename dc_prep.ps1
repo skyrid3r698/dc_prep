@@ -136,14 +136,19 @@ function datev {
     if (Test-Path $share_drive\_FREIGABEN\WINDVSW1) {Write-Host "debug: $share_drive\_FREIGABEN\WINDVSW1 already exists"} else {mkdir $share_drive\_FREIGABEN\WINDVSW1}
     if (Test-Path $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB) {Write-Host "debug: $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB already exists"} else {mkdir $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB}
     #create WINDVSW1 Share
-    $GRPAdministrators = (get-adgroup -Identity S-1-5-32-544).Name
-    $DATEVShareParams = @{
-    Name = "WINDVSW1"
-    Path = "$share_drive\_FREIGABEN\WINDVSW1"
-    ChangeAccess = "$domaeinname\DATEVUSER"
-    FullAccess = $GRPAdministrators
-    }
-    New-SmbShare @DATEVShareParams
+    if (Test-Path \\$env:COMPUTERNAME\WINDVSW1) {
+        Write-Host "debug: Share \\$env:COMPUTERNAME\WINDVSW1 already exists"
+        }
+        else {
+        $GRPAdministrators = (get-adgroup -Identity S-1-5-32-544).Name
+        $DATEVShareParams = @{
+        Name = "WINDVSW1"
+        Path = "$share_drive\_FREIGABEN\WINDVSW1"
+        ChangeAccess = "$domaeinname\DATEVUSER"
+        FullAccess = $GRPAdministrators
+        }
+        New-SmbShare @DATEVShareParams
+        }
     #set ACLs for WINDVSW1
     $DATEVACL = Get-Acl -Path "$share_drive\_FREIGABEN\WINDVSW1"
     $DATEVACL.SetAccessRuleProtection($true, $false)
@@ -179,14 +184,19 @@ function adconnect {
 function fslogix {
     if (Test-Path $share_drive\_FREIGABEN\FSLogix_Container) {Write-Host "debug: $share_drive\_FREIGABEN\FSLogix_Container already exists"} else {mkdir $share_drive\_FREIGABEN\FSLogix_Container}
     #check universial name for Everyone group and create SMB Share
-    $everyoneSID = [System.Security.Principal.SecurityIdentifier]::new('S-1-1-0')
-    $everyoneName = $everyoneSID.Translate([System.Security.Principal.NTAccount]).Value
-    $FSLogixShareParams = @{
-    Name = "FSLogix_Container"
-    Path = "$share_drive\_FREIGABEN\FSLogix_Container"
-    FullAccess = $everyoneName
-    }
-    New-SmbShare @FSLogixShareParams
+    if (Test-Path \\$env:COMPUTERNAME\FSLogix_Container) {
+        Write-Host "debug: Share \\$env:COMPUTERNAME\FSLogix_Container already exists"
+        }
+        else {
+        $everyoneSID = [System.Security.Principal.SecurityIdentifier]::new('S-1-1-0')
+        $everyoneName = $everyoneSID.Translate([System.Security.Principal.NTAccount]).Value
+        $FSLogixShareParams = @{
+        Name = "FSLogix_Container"
+        Path = "$share_drive\_FREIGABEN\FSLogix_Container"
+        FullAccess = $everyoneName
+        }
+        New-SmbShare @FSLogixShareParams
+        }
     #set NTFS ACLs for FSLogix Share
     $FSLogixACL = Get-Acl -Path "$share_drive\_FREIGABEN\FSLogix_Container"
     $FSLogixACL.SetAccessRuleProtection($true, $false)
@@ -218,11 +228,12 @@ function fslogix {
         $server
         }
     }
+    $FSLogixTERM = ""
     while(1 -ne 2)
     {
         if ($FSLogixTERM -eq "y") {write-host "Setup is continued as planned";break} 
         if ($FSLogixTERM -eq "n") {write-host "FSLogix Install on Terminalserver skipped. Maual install necessary";$serversWithRDSWithoutADDS = $null;break}
-        else {$FSLogixTERM = "y"; $FSLogixTERM = Read-Host "The following Terminalservers where found: $serversWithRDSWithoutADDS is that correct? [y] Yes [n] No (default is "y"):"}
+        else {$FSLogixTERM = Read-Host "The following Terminalservers where found: $serversWithRDSWithoutADDS is that correct? [y/n]"}
     }
     #Install FSLogix on every Terminalserver and add domainadmins to exclude group. And move TS to OU
     ForEach ($RDS in $serversWithRDSWithoutADDS) {
@@ -286,7 +297,7 @@ function check {
     if ((Get-GPO -Name Netzlaufwerke) -ne "" ) {Write-Host $(Get-Date)"[Info] GPO Netzlaufwerke successfully created"} else {Write-Host $(Get-Date)"[ERROR] GPO Netzlaufwerke creation failed" -ForegroundColor Red; $exitcode ++}
     if ((Get-GPO -Name EdgeDisableFirstRun) -ne "" ) {Write-Host $(Get-Date)"[Info] GPO EdgeDisableFirstRun successfully created"} else {Write-Host $(Get-Date)"[ERROR] GPO EdgeDisableFirstRun creation failed" -ForegroundColor Red; $exitcode ++}
     if (test-path \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions) {Write-Host $(Get-Date)"[Info] centralstore successfully created"} else {Write-Host $(Get-Date)"[Info] centralstore successfully failed" -ForegroundColor Red; $exitcode ++}
-    if ($exitcode -eq 0) {
+    if ($exitcode -eq "") {
         Write-Host $(Get-Date)"[INFO] The Script encountered no errors." -ForegroundColor Green
     }
     else {
