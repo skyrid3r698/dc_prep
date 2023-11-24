@@ -210,7 +210,12 @@ function fslogix {
         $server
         }
     }
-    $serversWithRDSWithoutADDS
+    while(1 -ne 2)
+    {
+        if ($FSLogixTERM -eq "y") {write-host "Setup is continued as planned";break} 
+        if ($FSLogixTERM -eq "n") {write-host "FSLogix Install on Terminalserver skipped. Maual install necessary";$serversWithRDSWithoutADDS = $null;break}
+        else {$FSLogixTERM = "y"; $FSLogixTERM = Read-Host "The following Terminalservers where found: $serversWithRDSWithoutADDS is that correct? [y] Yes [n] No (default is "y"):"}
+    }
     #Install FSLogix on every Terminalserver and add domainadmins to exclude group. And move TS to OU
     ForEach ($RDS in $serversWithRDSWithoutADDS) {
         $RDS_DN = (Get-ADObject -Filter "Name -eq '$RDS'").DistinguishedName
