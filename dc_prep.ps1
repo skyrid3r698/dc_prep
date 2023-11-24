@@ -239,7 +239,12 @@ function fslogix {
             cmd /c $prog /install /quiet
             start-sleep 5
             }
-        Add-LocalGroupMember -Group "FSLogix Profile Exclude List" -Member "$Using:GRPDomainAdmins"
+        if ((Get-LocalGroupMember -Name "FSLogix Profile Exclude List").Name -like "*$Using:GRPDomainAdmins") {
+            Write-Host "debug: $Using:GRPDomainAdmins already exists in local group FSLogix Profile Exclude List on $Using:RDS"
+            }
+            else {
+            Add-LocalGroupMember -Group "FSLogix Profile Exclude List" -Member "$Using:GRPDomainAdmins"
+            }
         }
     }
     #add FSLogix GPOs
