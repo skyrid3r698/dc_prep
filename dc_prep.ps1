@@ -1,3 +1,8 @@
+#Define Parameters
+Param(
+    [bool]$debug = $False
+)
+
 #start logging
 $null = Start-Transcript -Append $env:TEMP\dc_prep.log
 Write-Host $(Get-Date)"[INFO]Start Logging to $env:TEMP\dc_prep.log"
@@ -75,7 +80,7 @@ $CREATOROWNERAccount = $([System.Security.Principal.SecurityIdentifier]::new('S-
 
 # activate ad recyclebin
 if ((Get-ADOptionalFeature -Filter 'name -like "Recycle Bin Feature"').EnabledScopes) {
-Write-Host "debug: ActiceDirectory Recycle Bin already activated"
+if ($debug -eq $True) {Write-Host "debug: ActiceDirectory Recycle Bin already activated" -ForegroundColor Yellow}
 }
 else {
 Enable-ADOptionalFeature 'Recycle Bin Feature' -Scope ForestOrConfigurationSet -Target (Get-ADDomain).Forest -Confirm:$false
@@ -83,14 +88,14 @@ Enable-ADOptionalFeature 'Recycle Bin Feature' -Scope ForestOrConfigurationSet -
 
 
 function create_shares {
-    if (Test-Path $share_drive\_FREIGABEN) {Write-Host "debug: $share_drive\_FREIGABEN already exists"} else {mkdir $share_drive\_FREIGABEN}
+    if (Test-Path $share_drive\_FREIGABEN) {if ($debug -eq $True) {Write-Host "debug: $share_drive\_FREIGABEN already exists" -ForegroundColor Yellow}} else {mkdir $share_drive\_FREIGABEN}
 }
 function create_ad_ou {
-    try {Get-ADOrganizationalUnit -Identity "OU=$customer_name,$domainname" > $null; Write-Host "debug: OU=$customer_name,$domainname already exists"} catch {New-ADOrganizationalUnit -Name $customer_name -Path $domainname}
-    try {Get-ADOrganizationalUnit -Identity "OU=Benutzer,OU=$customer_name,$domainname" > $null; Write-Host "debug: OU=Benutzer,OU=$customer_name,$domainname already exists"} catch {New-ADOrganizationalUnit -Name Benutzer -Path "OU=$customer_name,$domainname"}
-    try {Get-ADOrganizationalUnit -Identity "OU=Gruppen,OU=$customer_name,$domainname" > $null; Write-Host "debug: OU=Gruppen,OU=$customer_name,$domainname already exists"} catch {New-ADOrganizationalUnit -Name Gruppen -Path "OU=$customer_name,$domainname"}
-    try {Get-ADOrganizationalUnit -Identity "OU=Computer,OU=$customer_name,$domainname" > $null; Write-Host "debug: OU=Computer,OU=$customer_name,$domainname already exists"} catch {New-ADOrganizationalUnit -Name Computer -Path "OU=$customer_name,$domainname"}
-    try {Get-ADOrganizationalUnit -Identity "OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname" > $null; Write-Host "debug: OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname already exists"} catch {New-ADOrganizationalUnit -Name Terminalserver -Path "OU=Computer,OU=$customer_name,$domainname"}
+    try {Get-ADOrganizationalUnit -Identity "OU=$customer_name,$domainname" > $null; if ($debug -eq $True) {Write-Host "debug: OU=$customer_name,$domainname already exists" -ForegroundColor Yellow}} catch {New-ADOrganizationalUnit -Name $customer_name -Path $domainname}
+    try {Get-ADOrganizationalUnit -Identity "OU=Benutzer,OU=$customer_name,$domainname" > $null; if ($debug -eq $True) {Write-Host "debug: OU=Benutzer,OU=$customer_name,$domainname already exists" -ForegroundColor Yellow}} catch {New-ADOrganizationalUnit -Name Benutzer -Path "OU=$customer_name,$domainname"}
+    try {Get-ADOrganizationalUnit -Identity "OU=Gruppen,OU=$customer_name,$domainname" > $null; if ($debug -eq $True) {Write-Host "debug: OU=Gruppen,OU=$customer_name,$domainname already exists" -ForegroundColor Yellow}} catch {New-ADOrganizationalUnit -Name Gruppen -Path "OU=$customer_name,$domainname"}
+    try {Get-ADOrganizationalUnit -Identity "OU=Computer,OU=$customer_name,$domainname" > $null; if ($debug -eq $True) {Write-Host "debug: OU=Computer,OU=$customer_name,$domainname already exists" -ForegroundColor Yellow}} catch {New-ADOrganizationalUnit -Name Computer -Path "OU=$customer_name,$domainname"}
+    try {Get-ADOrganizationalUnit -Identity "OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname" > $null; if ($debug -eq $True) {Write-Host "debug: OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname already exists" -ForegroundColor Yellow}} catch {New-ADOrganizationalUnit -Name Terminalserver -Path "OU=Computer,OU=$customer_name,$domainname"}
     #if MP-OU Systemvariable exists change it to new OU
     if ([System.Environment]::GetEnvironmentVariable("MP-OU") -eq $null) {} 
     else {
@@ -99,20 +104,20 @@ function create_ad_ou {
 }
 
 function create_ad_centralstore {
-    if (test-path \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions) {Write-Host "debug: centralstore already exists, skipping.."} else {copy-item C:\Windows\PolicyDefinitions \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\ -Recurse}
+    if (test-path \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions) {if ($debug -eq $True) {Write-Host "debug: centralstore already exists, skipping.." -ForegroundColor Yellow}} else {copy-item C:\Windows\PolicyDefinitions \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\ -Recurse}
 }
 
 function create_ad_policies { 
     try {
     if ($existingGPO -like "Netzlaufwerke") {
-    Write-Host "debug: gpo Netzlaufwerke already exists, creation skipped"
+    if ($debug -eq $True) {Write-Host "debug: gpo Netzlaufwerke already exists, creation skipped" -ForegroundColor Yellow}
     }
     else {
     New-GPO -Name Netzlaufwerke > $null
     New-GPLink -Name "Netzlaufwerke" -Target "$domainname" > $null
     }
     if ($existingGPO -like "EdgeDisableFirstRun") {
-    Write-Host "debug: gpo EdgeDisableFirstRun already exists, creation skipped"
+    if ($debug -eq $True) {Write-Host "debug: gpo EdgeDisableFirstRun already exists, creation skipped" -ForegroundColor Yellow}
     }
     else {
     New-GPO -Name EdgeDisableFirstRun | Out-Null > $null
@@ -129,17 +134,17 @@ function create_ad_policies {
 function datev {
     if ($existingGroups -like "DATEVUSER") {
     Move-ADObject -Identity $((get-adgroup DATEVUSER).ObjectGUID | ForEach{$_.GUID}) -TargetPath "OU=Gruppen,OU=$customer_name,$domainname"
-    Write-Host "debug: DATEVUSER already exists and is going to be moved"
+    if ($debug -eq $True) {Write-Host "debug: DATEVUSER already exists and is going to be moved" -ForegroundColor Yellow}
     }
     else {
     New-ADGroup -Name "DATEVUSER" -SamAccountName DATEVUSER -GroupCategory Security -GroupScope Global -DisplayName "DATEVUSER" -Path "OU=Gruppen,OU=$customer_name,$domainname"
     }
     $wc.Downloadfile("https://download.datev.de/download/datevitfix/serverprep.exe", "C:\Users\$env:USERNAME\Downloads\serverprep.exe")
-    if (Test-Path $share_drive\_FREIGABEN\WINDVSW1) {Write-Host "debug: $share_drive\_FREIGABEN\WINDVSW1 already exists"} else {mkdir $share_drive\_FREIGABEN\WINDVSW1 > $null}
-    if (Test-Path $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB) {Write-Host "debug: $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB already exists"} else {mkdir $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB > $null}
+    if (Test-Path $share_drive\_FREIGABEN\WINDVSW1) {if ($debug -eq $True) {Write-Host "debug: $share_drive\_FREIGABEN\WINDVSW1 already exists" -ForegroundColor Yellow}} else {mkdir $share_drive\_FREIGABEN\WINDVSW1 > $null}
+    if (Test-Path $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB) {if ($debug -eq $True) {Write-Host "debug: $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB already exists" -ForegroundColor Yellow}} else {mkdir $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB > $null}
     #create WINDVSW1 Share
     if (Test-Path \\$env:COMPUTERNAME\WINDVSW1) {
-        Write-Host "debug: Share \\$env:COMPUTERNAME\WINDVSW1 already exists"
+        if ($debug -eq $True) {Write-Host "debug: Share \\$env:COMPUTERNAME\WINDVSW1 already exists" -ForegroundColor Yellow}
         }
         else {
         $DATEVShareParams = @{
@@ -174,7 +179,7 @@ function datev {
 
 function adconnect {
     if ($existingGroups -like "M365-AD-Connect") {
-    Write-Host "debug: M365-AD-Connect already exists"
+    if ($debug -eq $True) {Write-Host "debug: M365-AD-Connect already exists" -ForegroundColor Yellow}
     }
     else {
     New-ADGroup -Name "M365-AD-Connect" -SamAccountName M365-AD-Connect -GroupCategory Security -GroupScope Global -DisplayName "M365-AD-Connect" -Path "OU=Gruppen,OU=$customer_name,$domainname"
@@ -183,10 +188,10 @@ function adconnect {
 }
 
 function fslogix {
-    if (Test-Path $share_drive\_FREIGABEN\FSLogix_Container) {Write-Host "debug: $share_drive\_FREIGABEN\FSLogix_Container already exists"} else {mkdir $share_drive\_FREIGABEN\FSLogix_Container}
+    if (Test-Path $share_drive\_FREIGABEN\FSLogix_Container) {if ($debug -eq $True) {Write-Host "debug: $share_drive\_FREIGABEN\FSLogix_Container already exists" -ForegroundColor Yellow}} else {mkdir $share_drive\_FREIGABEN\FSLogix_Container}
     #check universial name for Everyone group and create SMB Share
     if (Test-Path \\$env:COMPUTERNAME\FSLogix_Container) {
-        Write-Host "debug: Share \\$env:COMPUTERNAME\FSLogix_Container already exists"
+        if ($debug -eq $True) {Write-Host "debug: Share \\$env:COMPUTERNAME\FSLogix_Container already exists" -ForegroundColor Yellow}
         }
         else {
         $everyoneSID = [System.Security.Principal.SecurityIdentifier]::new('S-1-1-0')
@@ -252,7 +257,7 @@ function fslogix {
             start-sleep 5
             }
         if ((Get-LocalGroupMember -Name "FSLogix Profile Exclude List").Name -like "*$Using:GRPDomainAdmins") {
-            Write-Host "debug: $Using:GRPDomainAdmins already exists in local group FSLogix Profile Exclude List on $Using:RDS"
+            Write-Host $(Get-Date)"[INFO] $Using:GRPDomainAdmins already exists in local group FSLogix Profile Exclude List on $Using:RDS"
             }
             else {
             Add-LocalGroupMember -Group "FSLogix Profile Exclude List" -Member "$Using:GRPDomainAdmins"
@@ -262,7 +267,7 @@ function fslogix {
     #add FSLogix GPOs
     try {
     if ($existingGPO -like "FSLogix") {
-    Write-Host "debug: gpo FSLogix already exists, creation skipped"
+    if ($debug -eq $True) {Write-Host "debug: gpo FSLogix already exists, creation skipped" -ForegroundColor Yellow}
     }
     else {
     New-GPO -Name FSLogix
@@ -285,19 +290,19 @@ function fslogix {
 
 #check if successfull
 function check {
-    if ((Get-ADOptionalFeature -Filter 'name -like "Recycle Bin Feature"').EnabledScopes) {Write-Host $(Get-Date)"[Info] Active Directory Recycle Bin successfully activated"} else {Write-Host $(Get-Date)"[ERROR] Active Directory Recycle Bin was not activated" -ForegroundColor Red; $global:errorcount ++}
-    if([adsi]::Exists("LDAP://OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $global:errorcount ++}
-    if([adsi]::Exists("LDAP://OU=Benutzer,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Benutzer,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Benutzer,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $global:errorcount ++}
-    if([adsi]::Exists("LDAP://OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Gruppen,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $global:errorcount ++}
-    if([adsi]::Exists("LDAP://OU=Computer,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Computer,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Computer,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $global:errorcount ++}
-    if([adsi]::Exists("LDAP://OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $global:errorcount ++}
-    if ([System.Environment]::GetEnvironmentVariable("MP-OUs") -eq $null) {} else {if ([System.Environment]::GetEnvironmentVariable("MP-OU") -eq "OU=$customer_name,$domainname") {Write-Host $(Get-Date)"[Info] Systemvariable MP-OU successfully set to OU=$customer_name,$domainname"} else {Write-Host $(Get-Date)"[ERROR] setting Systemvariable MP-OU to OU=$customer_name,$domainname failed" -ForegroundColor Red; $global:errorcount ++}}
-    if ($datev -eq "y") { if([adsi]::Exists("LDAP://CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $global:errorcount ++}}
-    if ($datev -eq "y") { if(test-path $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB) {Write-Host $(Get-Date)"[Info] Folder $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB successfully created"} else {Write-Host $(Get-Date)"Folder creation failed" -ForegroundColor Red; $global:errorcount ++}}
-    if ($adconnect -eq "y") { if([adsi]::Exists("LDAP://CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[Info] CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $global:errorcount ++}}
-    if ((Get-GPO -Name Netzlaufwerke) -ne "" ) {Write-Host $(Get-Date)"[Info] GPO Netzlaufwerke successfully created"} else {Write-Host $(Get-Date)"[ERROR] GPO Netzlaufwerke creation failed" -ForegroundColor Red; $global:errorcount ++}
-    if ((Get-GPO -Name EdgeDisableFirstRun) -ne "" ) {Write-Host $(Get-Date)"[Info] GPO EdgeDisableFirstRun successfully created"} else {Write-Host $(Get-Date)"[ERROR] GPO EdgeDisableFirstRun creation failed" -ForegroundColor Red; $global:errorcount ++}
-    if (test-path \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions) {Write-Host $(Get-Date)"[Info] centralstore successfully created"} else {Write-Host $(Get-Date)"[Info] centralstore successfully failed" -ForegroundColor Red; $global:errorcount ++}
+    if ((Get-ADOptionalFeature -Filter 'name -like "Recycle Bin Feature"').EnabledScopes) {Write-Host $(Get-Date)"[INFO] Active Directory Recycle Bin successfully activated"} else {Write-Host $(Get-Date)"[ERROR] Active Directory Recycle Bin was not activated" -ForegroundColor Red; $global:errorcount ++}
+    if([adsi]::Exists("LDAP://OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[INFO] OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $global:errorcount ++}
+    if([adsi]::Exists("LDAP://OU=Benutzer,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[INFO] OU=Benutzer,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Benutzer,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $global:errorcount ++}
+    if([adsi]::Exists("LDAP://OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[INFO] OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Gruppen,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $global:errorcount ++}
+    if([adsi]::Exists("LDAP://OU=Computer,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[INFO] OU=Computer,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Computer,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $global:errorcount ++}
+    if([adsi]::Exists("LDAP://OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[INFO] OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $global:errorcount ++}
+    if ([System.Environment]::GetEnvironmentVariable("MP-OUs") -eq $null) {} else {if ([System.Environment]::GetEnvironmentVariable("MP-OU") -eq "OU=$customer_name,$domainname") {Write-Host $(Get-Date)"[INFO] Systemvariable MP-OU successfully set to OU=$customer_name,$domainname"} else {Write-Host $(Get-Date)"[ERROR] setting Systemvariable MP-OU to OU=$customer_name,$domainname failed" -ForegroundColor Red; $global:errorcount ++}}
+    if ($datev -eq "y") { if([adsi]::Exists("LDAP://CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[INFO] CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $global:errorcount ++}}
+    if ($datev -eq "y") { if(test-path $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB) {Write-Host $(Get-Date)"[INFO] Folder $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB successfully created"} else {Write-Host $(Get-Date)"Folder creation failed" -ForegroundColor Red; $global:errorcount ++}}
+    if ($adconnect -eq "y") { if([adsi]::Exists("LDAP://CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[INFO] CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $global:errorcount ++}}
+    if ((Get-GPO -Name Netzlaufwerke) -ne "" ) {Write-Host $(Get-Date)"[INFO] GPO Netzlaufwerke successfully created"} else {Write-Host $(Get-Date)"[ERROR] GPO Netzlaufwerke creation failed" -ForegroundColor Red; $global:errorcount ++}
+    if ((Get-GPO -Name EdgeDisableFirstRun) -ne "" ) {Write-Host $(Get-Date)"[INFO] GPO EdgeDisableFirstRun successfully created"} else {Write-Host $(Get-Date)"[ERROR] GPO EdgeDisableFirstRun creation failed" -ForegroundColor Red; $global:errorcount ++}
+    if (test-path \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions) {Write-Host $(Get-Date)"[INFO] centralstore successfully created"} else {Write-Host $(Get-Date)"[INFO] centralstore successfully failed" -ForegroundColor Red; $global:errorcount ++}
     if ($global:errorcount -eq $null) {
         Write-Host $(Get-Date)"[INFO] The Script encountered no errors." -ForegroundColor Green
     }
