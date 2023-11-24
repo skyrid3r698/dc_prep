@@ -22,6 +22,14 @@ $configfile = Test-Path $configfilepath
 if ($configfile -eq "True") {
     Write-Host $(Get-Date)"[INFO] Configfile found. Configuration is read from file"
     $customer_name = (Get-Content $configfilepath)[0].Substring(16)
+    if $customer_name -eq "false" {
+    while(1 -ne 2)
+    {
+        if ($adconnect -eq "y") {write-host "Setup is continuing with $customer_name as main OU";break} 
+        if ($adconnect -eq "n") {write-host "please set correct customer name in configfile";pause;exit}
+        else {$adconnect = Read-Host "Customer name is set to $customer_name. Are you sure you want to configure your main OU with that name? [y/n]"}
+    }
+    Write-Host 
     $datev = (Get-Content $configfilepath)[1].Substring(16)
     $adconnect = (Get-Content $configfilepath)[2].Substring(16)
     $share_drive = (Get-Content $configfilepath)[3].Substring(16)
