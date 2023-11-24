@@ -22,7 +22,7 @@ $configfile = Test-Path $configfilepath
 if ($configfile -eq "True") {
     Write-Host $(Get-Date)"[INFO] Configfile found. Configuration is read from file"
     $customer_name = (Get-Content $configfilepath)[0].Substring(16)
-    if $customer_name -eq "false" {
+    if ($customer_name -eq "false") {
     while(1 -ne 2)
     {
         if ($adconnect -eq "y") {write-host "Setup is continuing with $customer_name as main OU";break} 
