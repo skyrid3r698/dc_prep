@@ -298,7 +298,7 @@ function check {
     if ((Get-GPO -Name Netzlaufwerke) -ne "" ) {Write-Host $(Get-Date)"[Info] GPO Netzlaufwerke successfully created"} else {Write-Host $(Get-Date)"[ERROR] GPO Netzlaufwerke creation failed" -ForegroundColor Red; $global:errorcount ++}
     if ((Get-GPO -Name EdgeDisableFirstRun) -ne "" ) {Write-Host $(Get-Date)"[Info] GPO EdgeDisableFirstRun successfully created"} else {Write-Host $(Get-Date)"[ERROR] GPO EdgeDisableFirstRun creation failed" -ForegroundColor Red; $global:errorcount ++}
     if (test-path \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions) {Write-Host $(Get-Date)"[Info] centralstore successfully created"} else {Write-Host $(Get-Date)"[Info] centralstore successfully failed" -ForegroundColor Red; $global:errorcount ++}
-    if ($global:errorcount -eq "") {
+    if ($global:errorcount -eq $null) {
         Write-Host $(Get-Date)"[INFO] The Script encountered no errors." -ForegroundColor Green
     }
     else {
