@@ -86,10 +86,11 @@ else {
 Enable-ADOptionalFeature 'Recycle Bin Feature' -Scope ForestOrConfigurationSet -Target (Get-ADDomain).Forest -Confirm:$false
 }
 
-
+#create share location on $share_drive
 function create_shares {
     if (Test-Path $share_drive\_FREIGABEN) {if ($debug -eq $True) {Write-Host "debug: $share_drive\_FREIGABEN already exists" -ForegroundColor Yellow}} else {mkdir $share_drive\_FREIGABEN}
 }
+#create OUs
 function create_ad_ou {
     try {Get-ADOrganizationalUnit -Identity "OU=$customer_name,$domainname" > $null; if ($debug -eq $True) {Write-Host "debug: OU=$customer_name,$domainname already exists" -ForegroundColor Yellow}} catch {New-ADOrganizationalUnit -Name $customer_name -Path $domainname}
     try {Get-ADOrganizationalUnit -Identity "OU=Benutzer,OU=$customer_name,$domainname" > $null; if ($debug -eq $True) {Write-Host "debug: OU=Benutzer,OU=$customer_name,$domainname already exists" -ForegroundColor Yellow}} catch {New-ADOrganizationalUnit -Name Benutzer -Path "OU=$customer_name,$domainname"}
@@ -102,11 +103,11 @@ function create_ad_ou {
     [System.Environment]::SetEnvironmentVariable("OU=$customer_name,$domainname",[System.EnvironmentVariableTarget]::Machine)
     }
 }
-
+#create centralstore
 function create_ad_centralstore {
     if (test-path \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions) {if ($debug -eq $True) {Write-Host "debug: centralstore already exists, skipping.." -ForegroundColor Yellow}} else {copy-item C:\Windows\PolicyDefinitions \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\ -Recurse}
 }
-
+#create standard ad_poicies
 function create_ad_policies { 
     try {
     if ($existingGPO -like "Netzlaufwerke") {
@@ -130,7 +131,7 @@ function create_ad_policies {
     {Write-Host $(Get-Date)"[ERROR] The creation of one or more GPOs has failed. Please check Log" -ForegroundColor Red}
     }
 }
-
+#create datev share and set ACLs
 function datev {
     if ($existingGroups -like "DATEVUSER") {
     Move-ADObject -Identity $((get-adgroup DATEVUSER).ObjectGUID | ForEach{$_.GUID}) -TargetPath "OU=Gruppen,OU=$customer_name,$domainname"
@@ -176,7 +177,7 @@ function datev {
     $DATEVACL.SetAccessRule($DATEVAccessRule4)
     Set-Acl -Path "$share_drive\_FREIGABEN\WINDVSW1" -AclObject $DATEVACL
 }
-
+#prepare for adconnect
 function adconnect {
     if ($existingGroups -like "M365-AD-Connect") {
     if ($debug -eq $True) {Write-Host "debug: M365-AD-Connect already exists" -ForegroundColor Yellow}
@@ -186,7 +187,7 @@ function adconnect {
     }
     $wc.Downloadfile("https://download.microsoft.com/download/B/0/0/B00291D0-5A83-4DE7-86F5-980BC00DE05A/AzureADConnect.msi", "C:\Users\$env:USERNAME\Downloads\AzureADConnect.exe")
 }
-
+#fully configure FSLogix on DC and all Terminalservers
 function fslogix {
     if (Test-Path $share_drive\_FREIGABEN\FSLogix_Container) {if ($debug -eq $True) {Write-Host "debug: $share_drive\_FREIGABEN\FSLogix_Container already exists" -ForegroundColor Yellow}} else {mkdir $share_drive\_FREIGABEN\FSLogix_Container}
     #check universial name for Everyone group and create SMB Share
@@ -281,6 +282,7 @@ function fslogix {
     Set-GPRegistryValue -Name 'FSLogix' -Key 'HKEY_LOCAL_MACHINE\Software\fslogix\Profiles' -ValueName 'LockedRetryCount' -Type DWord -Value 12 > $null
     Set-GPRegistryValue -Name 'FSLogix' -Key 'HKEY_LOCAL_MACHINE\Software\fslogix\Profiles' -ValueName 'VolumeType' -Type String -Value VHDX > $null
     Set-GPRegistryValue -Name 'FSLogix' -Key 'HKEY_LOCAL_MACHINE\Software\fslogix\Profiles' -ValueName 'FlipFlopProfileDirectoryName' -Type DWord -Value 1 > $null
+    Set-GPRegistryValue -Name 'FSLogix' -Key 'HKEY_LOCAL_MACHINE\Software\fslogix\Profiles' -ValueName 'PreventLoginWithFailure' -Type DWord -Value 1 > $null
     }
     }
     catch {
