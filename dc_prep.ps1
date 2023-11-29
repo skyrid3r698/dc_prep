@@ -140,7 +140,6 @@ function datev {
     else {
     New-ADGroup -Name "DATEVUSER" -SamAccountName DATEVUSER -GroupCategory Security -GroupScope Global -DisplayName "DATEVUSER" -Path "OU=Gruppen,OU=$customer_name,$domainname"
     }
-    $wc.Downloadfile("https://download.datev.de/download/datevitfix/serverprep.exe", "C:\Users\$env:USERNAME\Downloads\serverprep.exe")
     if (Test-Path $share_drive\_FREIGABEN\WINDVSW1) {if ($debug -eq $True) {Write-Host "debug: $share_drive\_FREIGABEN\WINDVSW1 already exists" -ForegroundColor Yellow}} else {mkdir $share_drive\_FREIGABEN\WINDVSW1 > $null}
     if (Test-Path $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB) {if ($debug -eq $True) {Write-Host "debug: $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB already exists" -ForegroundColor Yellow}} else {mkdir $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB > $null}
     #create WINDVSW1 Share
