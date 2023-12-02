@@ -267,11 +267,7 @@ function fslogix {
         }
     }
     #add FSLogix GPOs
-    try {
-    if ($existingGPO -like "FSLogix") {
-    Write-Host $(Get-Date)"[INFO] GPO FSLogix already exists, creation skipped" -ForegroundColor Yellow
-    }
-    else {
+    function $Set-FSLogixGPO {
     New-GPO -Name FSLogix
     New-GPLink -Name "FSLogix" -Target "OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname"
     Set-GPRegistryValue -Name 'FSLogix' -Key 'HKEY_LOCAL_MACHINE\Software\fslogix\Logging' -ValueName 'LogFileKeepingPeriod' -Type DWord -Value 7 > $null
@@ -285,6 +281,19 @@ function fslogix {
     Set-GPRegistryValue -Name 'FSLogix' -Key 'HKEY_LOCAL_MACHINE\Software\fslogix\Profiles' -ValueName 'FlipFlopProfileDirectoryName' -Type DWord -Value 1 > $null
     Set-GPRegistryValue -Name 'FSLogix' -Key 'HKEY_LOCAL_MACHINE\Software\fslogix\Profiles' -ValueName 'PreventLoginWithFailure' -Type DWord -Value 1 > $null
     Set-GPRegistryValue -Name 'FSLogix' -Key 'HKEY_LOCAL_MACHINE\Software\fslogix\Profiles' -ValueName 'DeleteLocalProfileWhenVHDShouldApply' -Type DWord -Value 1 > $null
+    }
+    try {
+    if ($existingGPO -like "FSLogix") {
+    $FSLogixGPO = ""
+    while(1 -ne 2)
+    {
+        if ($FSLogixGPO -eq "y") {write-host "Overwriting..";Set-FSLogixGPO;break} 
+        if ($FSLogixGPO -eq "n") {write-host "Skipping FSLogix GPO creation, manual work may be necessary";break}
+        else {$FSLogixGPO = Read-Host "FSLogix GPO already exists. Do you want to overwrite it? [y/n]"}
+    }
+    }
+    else {
+    Set-FSLogixGPO
     }
     }
     catch {
