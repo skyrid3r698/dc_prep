@@ -1,7 +1,6 @@
 #Define Parameters
 Param(
-    [switch]$debug,
-    [string]$CreateUser = ""
+    [switch]$debug
 )
 
 #start logging
@@ -40,6 +39,7 @@ if ($configfile -eq "True") {
     $adconnect = (Get-Content $configfilepath)[2].Substring(16)
     $share_drive = (Get-Content $configfilepath)[3].Substring(16)
     $FSLogix = (Get-Content $configfilepath)[4].Substring(16)
+    $CreateUser = (Get-Content $configfilepath)[5].Substring(16)
 } 
 else {
     Write-Host $(Get-Date)"[INFO] No configfile found. Parameters have to be defined manually"
@@ -51,21 +51,22 @@ else {
         if ($datev -eq "n") {write-host "no datev specific preperations are going to be configured.";break}
         else {$datev = Read-Host "Is this going to be a DATEV Fileserver? [y/n]"}
     }
-    $adconnect = Read-Host "Configure Azure-AD-Connect?"
+    $adconnect = Read-Host "Configure Azure-AD-Connect? [y/n]"
     while(1 -ne 2)
     {
         if ($adconnect -eq "y") {write-host "Azure-AD-Connect is going to be configured";break} 
         if ($adconnect -eq "n") {write-host "Azure-AD-Connect is NOT going to be configured";break}
         else {$adconnect = Read-Host "Configure Azure-AD-Connect? [y/n]"}
     }
-    $FSLogix = Read-Host "Configure FSLogix?"
+    $FSLogix = Read-Host "Configure FSLogix? [y/n]"
     while(1 -ne 2)
     {
         if ($FSLogix -eq "y") {write-host "FSLogix is going to be configured";break} 
         if ($FSLogix -eq "n") {write-host "FSLogix is NOT going to be configured";break}
         else {$FSLogix = Read-Host "Configure FSLogix? [y/n]"}
     }
-    $share_drive = Read-Host "On which Drive are the SMB-Shares going to be saved? syntax: C:"
+    $share_drive = Read-Host "On which Drive are the SMB-Shares going to be saved? Syntax: C:"
+    $CreateUser = Read-Host "if you have prepared the csv file for user createn please set here. Syntax: C:\users.csv if not type n"
 }
 
 #read extra needed variables
@@ -137,7 +138,10 @@ function create_ad_policies {
 }
 #create AD Users if list was provided
 function create_ad_users {
-    if ($CreateUser -ne "") {
+    if ($CreateUser -eq "" -or $CreateUser -eq $null -or $CreateUser -eq "n") {
+    if ($debug -eq $True) {Write-Host "debug: Userlist not provided, so no user will be created" -ForegroundColor Yellow}
+    }
+else {
     Write-Host $(Get-Date)"[INFO] Users will be created from provided userlist: $CreateUser"
     $UserPass = Read-Host -AsSecureString "Please provide a initial Password that will be set for every USer in this list"
     foreach ($user in Import-Csv $CreateUser) {
@@ -159,9 +163,6 @@ function create_ad_users {
         Write-Host $(Get-Date)"[INFO] Something went wrong while creating $firstName $lastName. Maybe it already exists"
         }
     }
-}
-else {
-    if ($debug -eq $True) {Write-Host "debug: Userlist not provided, so no user will be created" -ForegroundColor Yellow}
     }
 }
 
