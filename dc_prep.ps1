@@ -246,7 +246,7 @@ function fslogix {
         $RDS_DN = (Get-ADObject -Filter "Name -eq '$RDS'").DistinguishedName
         Move-ADObject -Identity "$RDS_DN" -TargetPath "OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname"
         Invoke-Command -ComputerName $RDS -ScriptBlock {
-        Write-Host $(Get-Date)"[INFO] FSLogix is being installed on $RDS"
+        Write-Host $(Get-Date)"[INFO] FSLogix is being installed on $Using:RDS"
         $wc = New-Object net.webclient
         $wc.Downloadfile("https://aka.ms/fslogix_download", "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.zip")
         Expand-Archive -LiteralPath "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.zip" -DestinationPath "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps" -Force
