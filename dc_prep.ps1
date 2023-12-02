@@ -246,12 +246,13 @@ function fslogix {
         $RDS_DN = (Get-ADObject -Filter "Name -eq '$RDS'").DistinguishedName
         Move-ADObject -Identity "$RDS_DN" -TargetPath "OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname"
         Invoke-Command -ComputerName $RDS -ScriptBlock {
+        Write-Host $(Get-Date)"[INFO] FSLogix is being installed on $RDS"
         $wc = New-Object net.webclient
         $wc.Downloadfile("https://aka.ms/fslogix_download", "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.zip")
         Expand-Archive -LiteralPath "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.zip" -DestinationPath "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps" -Force
         Set-Location "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\*\x64\Release\"
         $fsxinst = (get-childitem).name
-        $fsxinst
+        if ($debug -eq $True) {Write-Host "debug: $fsxinst successfully downloaded and extracted in C:\Users\$env:USERNAME\Downloads\FSLogix_Apps on $RDS" -ForegroundColor Yellow} 
         ForEach ($prog in $fsxinst) {
             cmd /c $prog /install /quiet
             start-sleep 5
@@ -262,12 +263,13 @@ function fslogix {
             else {
             Add-LocalGroupMember -Group "FSLogix Profile Exclude List" -Member "$Using:GRPDomainAdmins"
             }
+            gpupdate > $null
         }
     }
     #add FSLogix GPOs
     try {
     if ($existingGPO -like "FSLogix") {
-    if ($debug -eq $True) {Write-Host "debug: gpo FSLogix already exists, creation skipped" -ForegroundColor Yellow}
+    Write-Host $(Get-Date)"[INFO] GPO FSLogix already exists, creation skipped" -ForegroundColor Yellow
     }
     else {
     New-GPO -Name FSLogix
