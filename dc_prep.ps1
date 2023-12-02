@@ -287,7 +287,7 @@ function fslogix {
     $FSLogixGPO = ""
     while(1 -ne 2)
     {
-        if ($FSLogixGPO -eq "y") {write-host "Overwriting..";Set-FSLogixGPO;break} 
+        if ($FSLogixGPO -eq "y") {write-host "Overwriting..";Remove-GPO FSLogix;Set-FSLogixGPO;break} 
         if ($FSLogixGPO -eq "n") {write-host "Skipping FSLogix GPO creation, manual work may be necessary";break}
         else {$FSLogixGPO = Read-Host "FSLogix GPO already exists. Do you want to overwrite it? [y/n]"}
     }
