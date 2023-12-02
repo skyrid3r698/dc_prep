@@ -153,7 +153,7 @@ function create_ad_users {
         if ($debug -eq $True) {Write-Host "debug: UPNSuffix already exists no need to create it" -ForegroundColor Yellow}
         }
         try {
-        New-ADUser -GivenName $firstName -Name $username -DisplayName "$firstName $lastName" -Surname $lastName -UserPrincipalName $email -Enabled $true -AccountPassword $UserPass -PasswordNeverExpires $true
+        New-ADUser -GivenName $firstName -Name $username -DisplayName "$firstName $lastName" -Surname $lastName -UserPrincipalName $email -EmailAddress $email -Enabled $true -AccountPassword $UserPass -PasswordNeverExpires $true
         }
         catch {
         Write-Host $(Get-Date)"[INFO] Something went wrong while creating $firstName $lastName. Maybe it already exists"
