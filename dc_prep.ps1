@@ -1,6 +1,7 @@
 #Define Parameters
 Param(
-    [bool]$debug = $False
+    [switch]$debug,
+    [string]$CreateUser = ""
 )
 
 #start logging
@@ -77,7 +78,6 @@ $existingGroups = (Get-ADGroup -Filter *).Name
 $SYSTEMAccount = $([System.Security.Principal.SecurityIdentifier]::new('S-1-5-18')).Translate([System.Security.Principal.NTAccount]).Value
 $CREATOROWNERAccount = $([System.Security.Principal.SecurityIdentifier]::new('S-1-3-0')).Translate([System.Security.Principal.NTAccount]).Value
 
-
 # activate ad recyclebin
 if ((Get-ADOptionalFeature -Filter 'name -like "Recycle Bin Feature"').EnabledScopes) {
 if ($debug -eq $True) {Write-Host "debug: ActiceDirectory Recycle Bin already activated" -ForegroundColor Yellow}
@@ -97,6 +97,10 @@ function create_ad_ou {
     try {Get-ADOrganizationalUnit -Identity "OU=Gruppen,OU=$customer_name,$domainname" > $null; if ($debug -eq $True) {Write-Host "debug: OU=Gruppen,OU=$customer_name,$domainname already exists" -ForegroundColor Yellow}} catch {New-ADOrganizationalUnit -Name Gruppen -Path "OU=$customer_name,$domainname"}
     try {Get-ADOrganizationalUnit -Identity "OU=Computer,OU=$customer_name,$domainname" > $null; if ($debug -eq $True) {Write-Host "debug: OU=Computer,OU=$customer_name,$domainname already exists" -ForegroundColor Yellow}} catch {New-ADOrganizationalUnit -Name Computer -Path "OU=$customer_name,$domainname"}
     try {Get-ADOrganizationalUnit -Identity "OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname" > $null; if ($debug -eq $True) {Write-Host "debug: OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname already exists" -ForegroundColor Yellow}} catch {New-ADOrganizationalUnit -Name Terminalserver -Path "OU=Computer,OU=$customer_name,$domainname"}
+    #set default OUs for Users and Computers
+    if ($debug -eq $True) {Write-Host "debug: setting new default OU for Computers and Users" -ForegroundColor Yellow}
+    redircmp "OU=Computer,OU=$customer_name,$domainname" > $null
+    redirusr "OU=Benutzer,OU=$customer_name,$domainname" > $null
     #if MP-OU Systemvariable exists change it to new OU
     if ([System.Environment]::GetEnvironmentVariable("MP-OU") -eq $null) {} 
     else {
@@ -131,6 +135,36 @@ function create_ad_policies {
     {Write-Host $(Get-Date)"[ERROR] The creation of one or more GPOs has failed. Please check Log" -ForegroundColor Red}
     }
 }
+#create AD Users if list was provided
+function create_ad_users {
+    if ($CreateUser -ne "") {
+    Write-Host $(Get-Date)"[INFO] Users will be created from provided userlist: $CreateUser"
+    $UserPass = Read-Host -AsSecureString "Please provide a initial Password that will be set for every USer in this list"
+    foreach ($user in Import-Csv $CreateUser) {
+        $firstName = $user."first name"
+        $lastName = $user."last name"
+        $username = $user.username
+        $email = $user.emailadress
+        $emaildomain = ($email).Split('@')[-1]
+        if ((Get-ADForest).UPNSuffixes -notcontains $emaildomain) {
+        Get-ADForest | Set-ADForest -UPNSuffixes @{add="$emaildomain"}
+        }
+        else {
+        if ($debug -eq $True) {Write-Host "debug: UPNSuffix already exists no need to create it" -ForegroundColor Yellow}
+        }
+        try {
+        New-ADUser -GivenName $firstName -Name $username -DisplayName "$firstName $lastName" -Surname $lastName -UserPrincipalName $email -Enabled $true -AccountPassword $UserPass -PasswordNeverExpires $true
+        }
+        catch {
+        Write-Host $(Get-Date)"[INFO] Something went wrong while creating $firstName $lastName. Maybe it already exists"
+        }
+    }
+}
+else {
+    if ($debug -eq $True) {Write-Host "debug: Userlist not provided, so no user will be created" -ForegroundColor Yellow}
+    }
+}
+
 #create datev share and set ACLs
 function datev {
     if ($existingGroups -like "DATEVUSER") {
@@ -329,6 +363,7 @@ function check {
 create_ad_ou
 create_ad_policies
 create_ad_centralstore
+create_ad_users
 if ($datev -eq "y") {datev}
 if ($adconnect -eq "y") {adconnect}
 if ($FSLogix -eq "y") {fslogix}
