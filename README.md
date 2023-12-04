@@ -2,15 +2,14 @@
 
 ## Running the Script
 
-    1. Configure the configfile dc_prep.conf as needed
-
-    customer_name: Customer name which is used as the first OU in the Active Directory
-    datev,adconnect,FSLogix: set y or n. With y the specified funktion is being run. With n it is being skipped
-    sharedrive: specifies the physical drive on which the Files for Datev and FSLogix are being saved and shared. Syntax is DriveLetter:
-    2. Open Powershell on domaincontroller as domain-administrator
-    3. Set-Executionpolicy 0
-    4. navigate to the scriptfolder and run dc_prep.ps1
-    5. Check for errors
+1. Configure the configfile dc_prep.conf as needed
+customer_name: Customer name which is used as the first OU in the Active Directory
+datev,adconnect,FSLogix: set y or n. With y the specified funktion is being run. With n it is being skipped
+sharedrive: specifies the physical drive on which the Files for Datev and FSLogix are being saved and shared. Syntax is DriveLetter:
+2. Open Powershell on domaincontroller as domain-administrator
+3. Set-Executionpolicy 0
+4. navigate to the scriptfolder and run dc_prep.ps1
+5. Check for errors
 
 ## Parameter
 
