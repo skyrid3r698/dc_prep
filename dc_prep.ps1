@@ -70,6 +70,7 @@ else {
 }
 
 #read extra needed variables
+$Global:errorcount = $null
 $domainnameshort = (Get-ADDomain).NetBIOSName
 $GRPAdministrators = (get-adgroup -Identity S-1-5-32-544).Name
 $GRPDomainAdmins = (Get-ADgroup -Identity "$((get-addomain).DomainSID.Value)-512").Name
@@ -85,7 +86,7 @@ if ((Get-ADOptionalFeature -Filter 'name -like "Recycle Bin Feature"').EnabledSc
 if ($debug -eq $True) {Write-Host "debug: ActiceDirectory Recycle Bin already activated" -ForegroundColor Yellow}
 }
 else {
-Enable-ADOptionalFeature 'Recycle Bin Feature' -Scope ForestOrConfigurationSet -Target (Get-ADDomain).Forest -Confirm:$false
+Enable-ADOptionalFeature 'Recycle Bin Feature' -Scope ForestOrConfigurationSet -Target (Get-ADDomain).Forest -Confirm:$false > $null
 }
 
 # set powercfg scheme to high performance
@@ -215,8 +216,15 @@ function datev {
     $DATEVACL.SetAccessRule($DATEVAccessRule4)
     Set-Acl -Path "$share_drive\_FREIGABEN\WINDVSW1" -AclObject $DATEVACL
     #add intranet site for file:\\hostname
-    New-Item -Path "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\Domains\$env:Computername" > $null
-    New-ItemProperty -Path "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\Domains\$env:Computername" -Name "file" -Value 1 -PropertyType DWORD > $null
+    if (test-path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\Domains\$env:computername") {
+    if ($debug -eq $True) {Write-Host "debug: Internet option file:\\$env:computername already exists" -ForegroundColor Yellow}
+    }
+    else {
+    New-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\Domains\$env:Computername" > $null
+    New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\Domains\$env:Computername" -Name "file" -Value 1 -PropertyType DWORD > $null
+    New-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains\$env:Computername" > $null
+    New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains\$env:Computername" -Name "file" -Value 1 -PropertyType DWORD > $null
+    }
 }
 #prepare for adconnect
 function adconnect {
@@ -266,7 +274,7 @@ function fslogix {
     copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\FSLogix*\fslogix.adml \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\de-DE
     copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\FSLogix*\fslogix.adml \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\en-US
     #prepare redirections.xml to exclude Teams cache
-    if (Test-Path $share_drive\_FREIGABEN\FSLogix_RedirXML) {if ($debug -eq $True) {Write-Host "debug: $share_drive\_FREIGABEN\FSLogix_RedirXML already exists" -ForegroundColor Yellow}} else {mkdir $share_drive\_FREIGABEN\FSLogix_RedirXML}
+    if (Test-Path $share_drive\_FREIGABEN\FSLogix_RedirXML) {if ($debug -eq $True) {Write-Host "debug: $share_drive\_FREIGABEN\FSLogix_RedirXML already exists" -ForegroundColor Yellow}} else {mkdir $share_drive\_FREIGABEN\FSLogix_RedirXML > $null}
     if (Test-Path \\$env:COMPUTERNAME\FSLogix_RedirXML) {
         if ($debug -eq $True) {Write-Host "debug: Share \\$env:COMPUTERNAME\FSLogix_RedirXML already exists" -ForegroundColor Yellow}
         }
@@ -298,7 +306,7 @@ function fslogix {
     <Includes />
 </FrxProfileFolderRedirection>
 '@
-    Out-File -FilePath $share_drive\_FREIGABEN\FSLogix_RedirXML -Encoding UTF8 -InputObject $redirectionsxml
+    Out-File -FilePath $share_drive\_FREIGABEN\FSLogix_RedirXML\redirections.xml -Encoding UTF8 -InputObject $redirectionsxml -Force
     
     
     #add FSLogix GPO
@@ -397,7 +405,7 @@ function check {
     if ([System.Environment]::GetEnvironmentVariable("MP-OUs") -eq $null) {} else {if ([System.Environment]::GetEnvironmentVariable("MP-OU") -eq "OU=$customer_name,$domainname") {Write-Host $(Get-Date)"[INFO] Systemvariable MP-OU successfully set to OU=$customer_name,$domainname"} else {Write-Host $(Get-Date)"[ERROR] setting Systemvariable MP-OU to OU=$customer_name,$domainname failed" -ForegroundColor Red; $global:errorcount ++}}
     if ($datev -eq "y") { if([adsi]::Exists("LDAP://CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[INFO] CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $global:errorcount ++}}
     if ($datev -eq "y") { if(test-path $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB) {Write-Host $(Get-Date)"[INFO] Folder $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB successfully created"} else {Write-Host $(Get-Date)"Folder creation failed" -ForegroundColor Red; $global:errorcount ++}}
-    if ($datev -eq "y") { if(test-path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\Domains\w2k22srv1') {Write-Host $(Get-Date)"[INFO] Internet option file:\\$env:computername successfully created"} else {Write-Host $(Get-Date)"Internet option file:\\$env:computername was not set. Please check manually" -ForegroundColor Red; $global:errorcount ++}}
+    if ($datev -eq "y") { if(test-path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\Domains\$env:computername") {Write-Host $(Get-Date)"[INFO] Internet option file:\\$env:computername successfully created"} else {Write-Host $(Get-Date)"[ERROR] Internet option file:\\$env:computername was not set. Please check manually" -ForegroundColor Red; $global:errorcount ++}}
     #adconnect
     if ($adconnect -eq "y") { if([adsi]::Exists("LDAP://CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[INFO] CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $global:errorcount ++}}
     #summary
