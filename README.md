@@ -19,30 +19,31 @@ There is a parameter "-debug". This parameter shows alot more information when r
 ## Features
 
 ### Default
-activates the ActiveDirectory RecycleBin
-creates a folder "_FREIGABEN" in the specified Path for "sharedrive"
-creates multiple OUs for better structure: customer_name -> Benutzer, Gruppen, Computer -> Terminalserver
-If Microplan Datacenter is being found, the needed enviroment variable is being set
-the centralstore ist being activated and configured
-The following Grouppolicies are being created: Netzlaufwerke (empty, linked to domain), EdgeDisableFirstRun (deactivates Edge first run Setuo, linked to domain),
-default computer and user OU is being changed to newly created one
+- activates the ActiveDirectory RecycleBin
+- creates a folder "_FREIGABEN" in the specified Path for "sharedrive"
+- creates multiple OUs for better structure: customer_name -> Benutzer, Gruppen, Computer -> Terminalserver
+- If Microplan Datacenter is being found, the needed enviroment variable is being set
+- the centralstore ist being activated and configured
+- The following Grouppolicies are being created: Netzlaufwerke (empty, linked to domain), EdgeDisableFirstRun (deactivates Edge first run Setuo, linked to domain),
+- default computer and user OU is being changed to newly created one
 ### if datev: y
-If DATEVUSER Group already exists it it being moved to newly created OU "Gruppen". If it does not exists it is being created
-$sharedrive\_FREIGABEN\WINDVSW1 and Subfolder CONFIGD is being created
-NTFS-Rights and Share-Rights are being set for WINDVSW1 with DATEV specifications
-WINDVSW1 is being shared
+- If DATEVUSER Group already exists it it being moved to newly created OU "Gruppen". If it does not exists it is being created
+- $sharedrive\_FREIGABEN\WINDVSW1 and Subfolder CONFIGD is being created
+- NTFS-Rights and Share-Rights are being set for WINDVSW1 with DATEV specifications
+- WINDVSW1 is being shared
 ### if adconnect: y
-The Group M365-AD-Connect is bein created under OU "Gruppen"
-AzureADConnect.exe is being created
+- The Group M365-AD-Connect is bein created under OU "Gruppen"
+- AzureADConnect.exe is being created
 ### if FSLogix: y
-$sharedrive\_FREIGABEN\FSLogix_Container is being created
-NTFS-Rights und Share-Rights are being set for FSLogix_Container with Microsoft specifications
-The folder FSLogix_Container is being shared
-The AD is being searched for all Terminalservers and istalls FSLogix on every one of them and adds domain-admins group to local FSLogix-Exclude Group after user confirms the found ones
-moves all found Terminalservers to newly created OU "Terminalserver"
-adds FSLogix.adml and admx to the centralstore
-Creates and preconfigures the FSLogix GPO and links them to Terminalserver OU
+- $sharedrive\_FREIGABEN\FSLogix_Container is being created
+- NTFS-Rights und Share-Rights are being set for FSLogix_Container with Microsoft specifications
+- The folder FSLogix_Container is being shared
+- The AD is being searched for all Terminalservers and istalls FSLogix on every one of them and adds domain-admins group to local FSLogix-Exclude Group after user confirms the found ones
+- moves all found Terminalservers to newly created OU "Terminalserver"
+- adds FSLogix.adml and admx to the centralstore
+- Creates and preconfigures the FSLogix GPO and links them to Terminalserver OU
 → FSLogix is fully configured after this and can be used immidiently
 ### if UserList: y
-AD-Users are being created as provided in the csv-List
-The AD-Suffix from the emailaddress is being created if it does not already exist
+- AD-Users are being created as provided in the csv-List
+- The AD-Suffix from the emailaddress is being created if it does not already exist
+- 
