@@ -13,12 +13,12 @@ sharedrive: specifies the physical drive on which the Files for Datev and FSLogi
 
 ## Parameter
 
-    ### debug
-        There is a parameter "-debug". This parameter shows alot more information when running the script.
+### debug
+There is a parameter "-debug". This parameter shows alot more information when running the script.
 
 ## Features
 
-    Default
+Default
         activates the ActiveDirectory RecycleBin
         creates a folder "_FREIGABEN" in the specified Path for "sharedrive"
         creates multiple OUs for better structure: customer_name -> Benutzer, Gruppen, Computer -> Terminalserver
