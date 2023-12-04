@@ -342,6 +342,8 @@ function fslogix {
 
 #check if successfull
 function check {
+    $activescheme = powercfg /GetActiveScheme
+    if ($activescheme -like "*8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c*") {Write-Host $(Get-Date)"[INFO] Powercfg successfully set to high perfomance"} else {Write-Host $(Get-Date)"[ERROR] Powercfg is not set to high performance, plese check and set manually" -ForegroundColor Red; $global:errorcount ++}
     if ((Get-ADOptionalFeature -Filter 'name -like "Recycle Bin Feature"').EnabledScopes) {Write-Host $(Get-Date)"[INFO] Active Directory Recycle Bin successfully activated"} else {Write-Host $(Get-Date)"[ERROR] Active Directory Recycle Bin was not activated" -ForegroundColor Red; $global:errorcount ++}
     if([adsi]::Exists("LDAP://OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[INFO] OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $global:errorcount ++}
     if([adsi]::Exists("LDAP://OU=Benutzer,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[INFO] OU=Benutzer,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Benutzer,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $global:errorcount ++}
