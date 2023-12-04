@@ -108,7 +108,7 @@ function create_ad_ou {
     #if MP-OU Systemvariable exists change it to new OU
     if ([System.Environment]::GetEnvironmentVariable("MP-OU") -eq $null) {} 
     else {
-    [System.Environment]::SetEnvironmentVariable("OU=$customer_name,$domainname",[System.EnvironmentVariableTarget]::Machine)
+    [System.Environment]::SetEnvironmentVariable("MP-OU","OU=$customer_name,$domainname",[System.EnvironmentVariableTarget]::Machine)
     }
 }
 #create centralstore
