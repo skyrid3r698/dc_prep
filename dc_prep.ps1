@@ -77,6 +77,7 @@ $GRPDomainAdmins = (Get-ADgroup -Identity "$((get-addomain).DomainSID.Value)-512
 $GRPDomainUsers = (Get-ADgroup -Identity "$((get-addomain).DomainSID.Value)-513").Name
 $existingGPO = (get-gpo -All).DisplayName
 $existingGroups = (Get-ADGroup -Filter *).Name
+$existingOU = (Get-ADOrganizationalUnit -Filter *).Name
 $SYSTEMAccount = $([System.Security.Principal.SecurityIdentifier]::new('S-1-5-18')).Translate([System.Security.Principal.NTAccount]).Value
 $CREATOROWNERAccount = $([System.Security.Principal.SecurityIdentifier]::new('S-1-3-0')).Translate([System.Security.Principal.NTAccount]).Value
 $everyoneAccount = $([System.Security.Principal.SecurityIdentifier]::new('S-1-1-0')).Translate([System.Security.Principal.NTAccount]).Value
@@ -179,6 +180,37 @@ function datev {
     }
     else {
     New-ADGroup -Name "DATEVUSER" -SamAccountName DATEVUSER -GroupCategory Security -GroupScope Global -DisplayName "DATEVUSER" -Path "OU=Gruppen,OU=$customer_name,$domainname"
+    }
+    #if DATEVOU exists ask for deletion
+    if ($existingOU -contains "DATEVOU") {
+    $DATEVOUDN = (Get-ADOrganizationalUnit -Filter 'Name -eq "DATEVOU"').DistinguishedName
+    try {
+    $RemoveDatevOU = ""
+    while(1 -ne 2)
+    {
+        if ($RemoveDatevOU -eq "y") {write-host "Deleting..";Set-ADOrganizationalUnit -Identity $DATEVOUDN -ProtectedFromAccidentalDeletion $false;Remove-ADOrganizationalUnit -Identity $DATEVOUDN -Confirm:$false;break} 
+        if ($RemoveDatevOU -eq "n") {write-host "DATEVOU will not be deleted. Please check if it is really necessary to keep";break}
+        else {$RemoveDatevOU = Read-Host "DATEVOU exists on this System. Do you want to delete it? [y/n]"}
+    }
+    }
+    catch {
+    Write-Host $(Get-Date)"[ERROR] DATEVOU could not be deleted. Please delete it manually" -ForegroundColor Red; $global:errorcount ++
+    }
+    }
+    #if WINDVSW1 exists in C:\WINDVSW1
+    if (test-path C:\WINDVSW1) {
+    try {
+    $RemoveDatevLW = ""
+    while(1 -ne 2)
+    {
+        if ($RemoveDatevLW -eq "y") {write-host "Deleting..";Remove-Item C:\WINDVSW1 -Recurse;break} 
+        if ($RemoveDatevLW -eq "n") {write-host "C:\WINDVSW1 will not be deleted. Please check if it is really necessary to keep";break}
+        else {$RemoveDatevLW = Read-Host "C:\WINDVSW1 exists on this System. Do you want to delete it? [y/n]"}
+    }
+    }
+    catch {
+    Write-Host $(Get-Date)"[ERROR] WINDVSW1 could not be deleted. Please delete it manually" -ForegroundColor Red; $global:errorcount ++
+    }
     }
     if (Test-Path $share_drive\_FREIGABEN\WINDVSW1) {if ($debug -eq $True) {Write-Host "debug: $share_drive\_FREIGABEN\WINDVSW1 already exists" -ForegroundColor Yellow}} else {mkdir $share_drive\_FREIGABEN\WINDVSW1 > $null}
     if (Test-Path $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB) {if ($debug -eq $True) {Write-Host "debug: $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB already exists" -ForegroundColor Yellow}} else {mkdir $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB > $null}
