@@ -87,6 +87,9 @@ else {
 Enable-ADOptionalFeature 'Recycle Bin Feature' -Scope ForestOrConfigurationSet -Target (Get-ADDomain).Forest -Confirm:$false
 }
 
+# set powercfg scheme to high performance
+powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c
+
 #create share location on $share_drive
 function create_shares {
     if (Test-Path $share_drive\_FREIGABEN) {if ($debug -eq $True) {Write-Host "debug: $share_drive\_FREIGABEN already exists" -ForegroundColor Yellow}} else {mkdir $share_drive\_FREIGABEN}
