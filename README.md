@@ -26,6 +26,7 @@ There is a parameter "-debug". This parameter shows alot more information when r
 - the centralstore ist being activated and configured
 - The following Grouppolicies are being created: Netzlaufwerke (empty, linked to domain), EdgeDisableFirstRun (deactivates Edge first run Setuo, linked to domain),
 - default computer and user OU is being changed to newly created one
+- sets the actve powerscheme to high performance
 ### if datev: y
 - If DATEVUSER Group already exists it it being moved to newly created OU "Gruppen". If it does not exists it is being created
 - $sharedrive\_FREIGABEN\WINDVSW1 and Subfolder CONFIGD is being created
