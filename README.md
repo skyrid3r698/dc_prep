@@ -43,6 +43,7 @@ There is a parameter "-debug". This parameter shows alot more information when r
 - moves all found Terminalservers to newly created OU "Terminalserver"
 - adds FSLogix.adml and admx to the centralstore
 - Creates and preconfigures the FSLogix GPO and links them to Terminalserver OU
+- Configures a setting to exclude Teams cache from Users VHDX to prevent bloating the VHDX
 → FSLogix is fully configured after this and can be used immidiently
 ### if UserList: y
 - AD-Users are being created as provided in the csv-List
