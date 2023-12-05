@@ -253,6 +253,21 @@ function datev {
     Set-GPRegistryValue -Name 'Intranet_Zonemapping' -Key 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\CurrentVersion\Internet Settings' -ValueName 'ListBox_Support_ZoneMapKey' -Type DWORD -Value 1 > $null
     Set-GPRegistryValue -Name 'Intranet_Zonemapping' -Key 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMapKey' -ValueName "\\$env:computername" -Type String -Value 1 > $null
     #set Netzlaufwerke GPO
+    [string]$NetzlaufwerkeGUID = (get-gpo -Name Netzlaufwerke).Id
+      $Drivesxml = @'
+<?xml version="1.0" encoding="utf-8"?>
+<Drives clsid="{8FDDCC1A-0C3C-43cd-A6B4-71A6DF20DA8C}">
+'@
+    $driveChanged = Get-Date -Format "yyyy-MM-dd hh:mm:ss"
+    $driveUID = [guid]::NewGuid()
+    $drivePath = "\\$env:computername\WINDVSW1"
+    $driveGroup = "$domainnameshort\DATEVUSER"
+    [string]$driveGroupSID = (Get-ADGroup -Identity DATEVUSER).sid
+
+    $driveString = '<Drive clsid="{935D1B74-9CB8-4e3c-9914-7DD559B7A417}" name="L:" status="L:" image="2" changed="' + $driveChanged + '" uid="{' + $driveUID + '}" userContext="1" bypassErrors="1"><Properties action="U" thisDrive="NOCHANGE" allDrives="NOCHANGE" userName="" path="' + $drivePath + '" label="WINDVSW1" persistent="0" useLetter="1" letter="L"/><Filters><FilterGroup bool="AND" not="0" name="' + $driveGroup + '" sid="' + $driveGroupSID + '" userContext="1" primaryGroup="0" localGroup="0"/></Filters></Drive>'
+    Out-File -FilePath \\$env:computername\SYSVOL\$domainname\Policies\{$NetzlaufwerkeGUID}\User\Preferences\Drives\Drives.xml -Encoding UTF8 -InputObject $Drivesxml -Force
+    Add-Content -Path C:\Users\jnowak\Documents\Drives.xml -Value $driveString 
+    Add-Content -Path C:\Users\jnowak\Documents\Drives.xml -Value "</Drives>"
 #    if (test-path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\Domains\$env:computername") {
 #    if ($debug -eq $True) {Write-Host "debug: Internet option file:\\$env:computername already exists" -ForegroundColor Yellow}
 #    }
