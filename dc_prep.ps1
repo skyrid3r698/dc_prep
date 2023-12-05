@@ -247,16 +247,21 @@ function datev {
     $DATEVACL.AddAccessRule($DATEVAccessRule3)
     $DATEVACL.SetAccessRule($DATEVAccessRule4)
     Set-Acl -Path "$share_drive\_FREIGABEN\WINDVSW1" -AclObject $DATEVACL
-    #add intranet site for file:\\hostname
-    if (test-path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\Domains\$env:computername") {
-    if ($debug -eq $True) {Write-Host "debug: Internet option file:\\$env:computername already exists" -ForegroundColor Yellow}
-    }
-    else {
-    New-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\Domains\$env:Computername" > $null
-    New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\Domains\$env:Computername" -Name "file" -Value 1 -PropertyType DWORD > $null
-    New-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains\$env:Computername" > $null
-    New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains\$env:Computername" -Name "file" -Value 1 -PropertyType DWORD > $null
-    }
+    #add intranet site for file:\\hostname GPO
+    New-GPO -Name Intranet_Zonemapping | Out-Null > $null
+    New-GPLink -Name "Intranet_Zonemapping" -Target "$domainname" > $null
+    Set-GPRegistryValue -Name 'Intranet_Zonemapping' -Key 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\CurrentVersion\Internet Settings' -ValueName 'ListBox_Support_ZoneMapKey' -Type DWORD -Value 1 > $null
+    Set-GPRegistryValue -Name 'Intranet_Zonemapping' -Key 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMapKey' -ValueName "\\$env:computername" -Type String -Value 1 > $null
+    #set Netzlaufwerke GPO
+#    if (test-path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\Domains\$env:computername") {
+#    if ($debug -eq $True) {Write-Host "debug: Internet option file:\\$env:computername already exists" -ForegroundColor Yellow}
+#    }
+#    else {
+#    New-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\Domains\$env:Computername" > $null
+#    New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\Domains\$env:Computername" -Name "file" -Value 1 -PropertyType DWORD > $null
+#    New-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains\$env:Computername" > $null
+#    New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains\$env:Computername" -Name "file" -Value 1 -PropertyType DWORD > $null
+#    }
 }
 #prepare for adconnect
 function adconnect {
@@ -437,7 +442,7 @@ function check {
     if ([System.Environment]::GetEnvironmentVariable("MP-OUs") -eq $null) {} else {if ([System.Environment]::GetEnvironmentVariable("MP-OU") -eq "OU=$customer_name,$domainname") {Write-Host $(Get-Date)"[INFO] Systemvariable MP-OU successfully set to OU=$customer_name,$domainname"} else {Write-Host $(Get-Date)"[ERROR] setting Systemvariable MP-OU to OU=$customer_name,$domainname failed" -ForegroundColor Red; $global:errorcount ++}}
     if ($datev -eq "y") { if([adsi]::Exists("LDAP://CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[INFO] CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] CN=DATEVUSER,OU=Gruppen,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $global:errorcount ++}}
     if ($datev -eq "y") { if(test-path $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB) {Write-Host $(Get-Date)"[INFO] Folder $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB successfully created"} else {Write-Host $(Get-Date)"Folder creation failed" -ForegroundColor Red; $global:errorcount ++}}
-    if ($datev -eq "y") { if(test-path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\Domains\$env:computername") {Write-Host $(Get-Date)"[INFO] Internet option file:\\$env:computername successfully created"} else {Write-Host $(Get-Date)"[ERROR] Internet option file:\\$env:computername was not set. Please check manually" -ForegroundColor Red; $global:errorcount ++}}
+    #if ($datev -eq "y") { if(test-path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\Domains\$env:computername") {Write-Host $(Get-Date)"[INFO] Internet option file:\\$env:computername successfully created"} else {Write-Host $(Get-Date)"[ERROR] Internet option file:\\$env:computername was not set. Please check manually" -ForegroundColor Red; $global:errorcount ++}}
     #adconnect
     if ($adconnect -eq "y") { if([adsi]::Exists("LDAP://CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[INFO] CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $global:errorcount ++}}
     #summary
