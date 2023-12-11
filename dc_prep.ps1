@@ -136,6 +136,12 @@ function create_ad_policies {
     New-GPLink -Name "EdgeDisableFirstRun" -Target "$domainname" > $null
     Set-GPRegistryValue -Name 'EdgeDisableFirstRun' -Key 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Edge' -ValueName 'hidefirstrunexperience' -Type DWord -Value 1 > $null
     Set-GPRegistryValue -Name 'EdgeDisableFirstRun' -Key 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Edge' -ValueName 'showrecommendationsenabled' -Type DWord -Value 0 > $null
+    $wc.Downloadfile("https://msedge.sf.dl.delivery.mp.microsoft.com/filestreamingservice/files/c2c84643-9d5d-4a44-af4c-36a00745bb3a/MicrosoftEdgePolicyTemplates.cab", "C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates.cab")
+    expand "C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates.cab" -F:* "C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates.zip"
+    Expand-Archive -LiteralPath "C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates.zip" -DestinationPath "C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates" -Force
+    copy-item C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates\windows\admx\*.admx \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions
+    copy-item C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates\windows\admx\de-DE\*.adml \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\de-DE
+    copy-item C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates\windows\admx\en-US\*.adml \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\en-US
     }
     }
     catch {
