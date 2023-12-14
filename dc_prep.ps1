@@ -168,7 +168,7 @@ function create_ad_users {
 else {
     Write-Host $(Get-Date)"[INFO] Users will be created from provided userlist: $CreateUser"
     $UserPass = Read-Host -AsSecureString "Please provide a initial Password that will be set for every User in this list"
-    foreach ($user in Import-Csv $CreateUser) {
+    foreach ($user in Import-Csv $CreateUser -Delimiter ";") {
         $firstName = $user."first name"
         $lastName = $user."last name"
         $username = $user.username
@@ -181,7 +181,7 @@ else {
         if ($debug -eq $True) {Write-Host "debug: UPNSuffix already exists no need to create it" -ForegroundColor Yellow}
         }
         try {
-        New-ADUser -GivenName $firstName -Name $username -DisplayName "$firstName $lastName" -Surname $lastName -UserPrincipalName $email -EmailAddress $email -Enabled $true -AccountPassword $UserPass -PasswordNeverExpires $true
+        New-ADUser -GivenName $firstName -Name "$firstName $lastName" -DisplayName "$firstName $lastName" -Surname $lastName -UserPrincipalName $email -EmailAddress $email -Enabled $true -AccountPassword $UserPass -PasswordNeverExpires $true -SamAccountName $username
         }
         catch {
         Write-Host $(Get-Date)"[INFO] Something went wrong while creating $firstName $lastName. Maybe it already exists"
