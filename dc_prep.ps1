@@ -167,7 +167,7 @@ function create_ad_users {
     }
 else {
     Write-Host $(Get-Date)"[INFO] Users will be created from provided userlist: $CreateUser"
-    $UserPass = Read-Host -AsSecureString "Please provide a initial Password that will be set for every USer in this list"
+    $UserPass = Read-Host -AsSecureString "Please provide a initial Password that will be set for every User in this list"
     foreach ($user in Import-Csv $CreateUser) {
         $firstName = $user."first name"
         $lastName = $user."last name"
