@@ -125,7 +125,10 @@ function create_ad_ou {
 }
 #create centralstore
 function create_ad_centralstore {
-    if (test-path \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions) {if ($debug -eq $True) {Write-Host "debug: centralstore already exists, skipping.." -ForegroundColor Yellow}} else {copy-item C:\Windows\PolicyDefinitions \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\ -Recurse}
+    if (test-path \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions) {
+    if ($debug -eq $True) {Write-Host "debug: centralstore already exists, skipping.." -ForegroundColor Yellow}
+    } 
+    else {copy-item C:\Windows\PolicyDefinitions \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\ -Recurse}
 }
 #create standard ad_poicies
 function create_ad_policies { 
@@ -146,15 +149,15 @@ function create_ad_policies {
     Set-GPRegistryValue -Name 'EdgeDisableFirstRun' -Key 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Edge' -ValueName 'hidefirstrunexperience' -Type DWord -Value 1 > $null
     Set-GPRegistryValue -Name 'EdgeDisableFirstRun' -Key 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Edge' -ValueName 'showrecommendationsenabled' -Type DWord -Value 0 > $null
     $wc.Downloadfile("https://msedge.sf.dl.delivery.mp.microsoft.com/filestreamingservice/files/c2c84643-9d5d-4a44-af4c-36a00745bb3a/MicrosoftEdgePolicyTemplates.cab", "C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates.cab")
-    expand "C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates.cab" -F:* "C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates.zip"
-    Expand-Archive -LiteralPath "C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates.zip" -DestinationPath "C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates" -Force
+    expand "C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates.cab" -F:* "C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates.zip" > $null
+    Expand-Archive -LiteralPath "C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates.zip" -DestinationPath "C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates" -Force > $null
     copy-item C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates\windows\admx\*.admx \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions
     copy-item C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates\windows\admx\de-DE\*.adml \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\de-DE
     copy-item C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates\windows\admx\en-US\*.adml \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\en-US
     }
     }
     catch {
-    {Write-Host $(Get-Date)"[ERROR] The creation of one or more GPOs has failed. Please check Log" -ForegroundColor Red}
+    {Write-Host $(Get-Date)"[ERROR] The creation of one or more GPOs has failed. Please check Log" -ForegroundColor Red; $global:errorcount ++}
     }
 }
 #create AD Users if list was provided
@@ -289,7 +292,7 @@ function datev {
     if ($debug -eq $True) {Write-Host "debug: $share_drive\_FREIGABEN\WINDVSW1\CONFIGDB already exists" -ForegroundColor Yellow}
     } 
     else {
-    mkdir "\\$env:computername\SYSVOL\$domainnamenormal\Policies\{$NetzlaufwerkeGUID}\User\Preferences\Drives"
+    mkdir "\\$env:computername\SYSVOL\$domainnamenormal\Policies\{$NetzlaufwerkeGUID}\User\Preferences\Drives" > $null
     }
     $driveString = '<Drive clsid="{935D1B74-9CB8-4e3c-9914-7DD559B7A417}" name="L:" status="L:" image="2" changed="' + $driveChanged + '" uid="{' + $driveUID + '}" userContext="1" bypassErrors="1"><Properties action="U" thisDrive="NOCHANGE" allDrives="NOCHANGE" userName="" path="' + $drivePath + '" label="WINDVSW1" persistent="0" useLetter="1" letter="L"/><Filters><FilterGroup bool="AND" not="0" name="' + $driveGroup + '" sid="' + $driveGroupSID + '" userContext="1" primaryGroup="0" localGroup="0"/></Filters></Drive>'
     Out-File -FilePath "\\$env:computername\SYSVOL\$domainnamenormal\Policies\{$NetzlaufwerkeGUID}\User\Preferences\Drives\Drives.xml" -Encoding UTF8 -InputObject $Drivesxml -Force
@@ -317,7 +320,12 @@ function adconnect {
 }
 #fully configure FSLogix on DC and all Terminalservers
 function fslogix {
-    if (Test-Path $share_drive\_FREIGABEN\FSLogix_Container) {if ($debug -eq $True) {Write-Host "debug: $share_drive\_FREIGABEN\FSLogix_Container already exists" -ForegroundColor Yellow}} else {mkdir $share_drive\_FREIGABEN\FSLogix_Container}
+    if (Test-Path $share_drive\_FREIGABEN\FSLogix_Container) {if ($debug -eq $True) {
+    Write-Host "debug: $share_drive\_FREIGABEN\FSLogix_Container already exists" -ForegroundColor Yellow}
+    } 
+    else {
+    mkdir $share_drive\_FREIGABEN\FSLogix_Container > $null
+    }
     #check universial name for Everyone group and create SMB Share
     if (Test-Path \\$env:COMPUTERNAME\FSLogix_Container) {
         if ($debug -eq $True) {Write-Host "debug: Share \\$env:COMPUTERNAME\FSLogix_Container already exists" -ForegroundColor Yellow}
@@ -349,9 +357,9 @@ function fslogix {
     #download FSLogix Apps and add centralstore admx/adml
     $wc.Downloadfile("https://aka.ms/fslogix_download", "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.zip")
     Expand-Archive -LiteralPath "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.zip" -DestinationPath "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps" -Force
-    copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\FSLogix*\fslogix.admx \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions
-    copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\FSLogix*\fslogix.adml \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\de-DE
-    copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\FSLogix*\fslogix.adml \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\en-US
+    copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\fslogix.admx \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions
+    copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\fslogix.adml \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\de-DE
+    copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\fslogix.adml \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\en-US
     #prepare redirections.xml to exclude Teams cache
     if (Test-Path $share_drive\_FREIGABEN\FSLogix_RedirXML) {if ($debug -eq $True) {Write-Host "debug: $share_drive\_FREIGABEN\FSLogix_RedirXML already exists" -ForegroundColor Yellow}} else {mkdir $share_drive\_FREIGABEN\FSLogix_RedirXML > $null}
     if (Test-Path \\$env:COMPUTERNAME\FSLogix_RedirXML) {
@@ -440,7 +448,7 @@ function fslogix {
         $wc = New-Object net.webclient
         $wc.Downloadfile("https://aka.ms/fslogix_download", "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.zip")
         Expand-Archive -LiteralPath "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.zip" -DestinationPath "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps" -Force
-        Set-Location "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\*\x64\Release\"
+        Set-Location "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\x64\Release\"
         $fsxinst = (get-childitem).name
         if ($debug -eq $True) {Write-Host "debug: $fsxinst successfully downloaded and extracted in C:\Users\$env:USERNAME\Downloads\FSLogix_Apps on $RDS" -ForegroundColor Yellow} 
         ForEach ($prog in $fsxinst) {
