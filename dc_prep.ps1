@@ -168,7 +168,24 @@ function create_ad_users {
 else {
     Write-Host $(Get-Date)"[INFO] Users will be created from provided userlist: $CreateUser"
     $UserPass = Read-Host -AsSecureString "Please provide a initial Password that will be set for every User in this list"
-    foreach ($user in Import-Csv $CreateUser -Delimiter ";") {
+    #detect delimiter of csv
+    $possibleDelimiters = ',',';'
+    $result = $null
+
+    foreach ($delimiter in $possibleDelimiters) {
+    $count = [regex]::matches((Get-Content $CreateUser -TotalCount 5), $delimiter).count
+    $result += "`n$count"
+    }
+    if ([int](($result -split '\n')[1]) -gt [int](($result -split '\n')[2])) {
+        $detectedDelimiter = ','
+        if ($debug -eq $True) {Write-Host "debug: Delimiter is $detectedDelimiter" -ForegroundColor Yellow}
+    }
+    else {
+        $detectedDelimiter = ';'
+        if ($debug -eq $True) {Write-Host "debug: Delimiter is $detectedDelimiter" -ForegroundColor Yellow}
+    }
+    #create users from list
+    foreach ($user in Import-Csv $CreateUser -Delimiter $detectedDelimiter) {
         $firstName = $user."first name"
         $lastName = $user."last name"
         $username = $user.username
