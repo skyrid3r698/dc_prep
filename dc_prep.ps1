@@ -78,6 +78,7 @@ $GRPDomainUsers = (Get-ADgroup -Identity "$((get-addomain).DomainSID.Value)-513"
 $existingGPO = (get-gpo -All).DisplayName
 $existingGroups = (Get-ADGroup -Filter *).Name
 $existingOU = (Get-ADOrganizationalUnit -Filter *).Name
+$existingUsers = get-aduser -Filter *
 $SYSTEMAccount = $([System.Security.Principal.SecurityIdentifier]::new('S-1-5-18')).Translate([System.Security.Principal.NTAccount]).Value
 $CREATOROWNERAccount = $([System.Security.Principal.SecurityIdentifier]::new('S-1-3-0')).Translate([System.Security.Principal.NTAccount]).Value
 $everyoneAccount = $([System.Security.Principal.SecurityIdentifier]::new('S-1-1-0')).Translate([System.Security.Principal.NTAccount]).Value
@@ -500,6 +501,13 @@ function check {
     if([adsi]::Exists("LDAP://OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[INFO] OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $global:errorcount ++}
     if ((Get-GPO -Name Netzlaufwerke) -ne "" ) {Write-Host $(Get-Date)"[INFO] GPO Netzlaufwerke successfully created"} else {Write-Host $(Get-Date)"[ERROR] GPO Netzlaufwerke creation failed" -ForegroundColor Red; $global:errorcount ++}
     if ((Get-GPO -Name EdgeDisableFirstRun) -ne "" ) {Write-Host $(Get-Date)"[INFO] GPO EdgeDisableFirstRun successfully created"} else {Write-Host $(Get-Date)"[ERROR] GPO EdgeDisableFirstRun creation failed" -ForegroundColor Red; $global:errorcount ++}
+    #check if Loginscript is used in this AD
+    [int]$Loginscript = 0
+    foreach ($user in $existingUsers.SamAccountName) {
+    $nuser = get-aduser -Identity $user -Properties scriptPath
+    if ($nuser.scriptPath) {Write-Host "Logonscript $($nuser.ScriptPath) is in use by $($nuser.SamAccountName)";$Loginscript ++}
+    }
+    if ($Loginscript -gt 0) {Write-Host $(Get-Date)"[WARNING] Loginscript is in use by $Loginscript Users" -ForegroundColor Yellow} else {Write-Host $(Get-Date)"[INFO] Loginscript is not used in this AD"}
     #centralstore
     if (test-path \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\) {Write-Host $(Get-Date)"[INFO] centralstore successfully created"} else {Write-Host $(Get-Date)"[ERROR] failed to create centralstore" -ForegroundColor Red; $global:errorcount ++}
     if (test-path \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\msedge.admx) {Write-Host $(Get-Date)"[INFO] MSEdge policies successfully added to centralstore"} else {Write-Host $(Get-Date)"[ERROR] failed to add MSEdge policies to centralstore" -ForegroundColor Red; $global:errorcount ++}
