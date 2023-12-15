@@ -210,6 +210,7 @@ else {
 
 #create datev share and set ACLs
 function datev {
+    #create DATEVUSER Group if not existant
     if ($existingGroups -like "DATEVUSER") {
     Move-ADObject -Identity $((get-adgroup DATEVUSER).ObjectGUID | ForEach{$_.GUID}) -TargetPath "OU=Gruppen,OU=$customer_name,$domainname"
     if ($debug -eq $True) {Write-Host "debug: DATEVUSER already exists and is going to be moved" -ForegroundColor Yellow}
@@ -217,6 +218,7 @@ function datev {
     else {
     New-ADGroup -Name "DATEVUSER" -SamAccountName DATEVUSER -GroupCategory Security -GroupScope Global -DisplayName "DATEVUSER" -Path "OU=Gruppen,OU=$customer_name,$domainname"
     }
+    Add-ADGroupMember -Identity DATEVUSER -Members $env:username
     #if DATEVOU exists ask for deletion
     if ($existingOU -contains "DATEVOU") {
     $DATEVOUDN = (Get-ADOrganizationalUnit -Filter 'Name -eq "DATEVOU"').DistinguishedName
