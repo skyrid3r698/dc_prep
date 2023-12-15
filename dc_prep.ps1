@@ -292,8 +292,9 @@ function datev {
     else {
     New-GPO -Name Intranet_Zonemapping | Out-Null > $null
     New-GPLink -Name "Intranet_Zonemapping" -Target "$domainname" > $null
-    Set-GPRegistryValue -Name 'Intranet_Zonemapping' -Key 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\CurrentVersion\Internet Settings' -ValueName 'ListBox_Support_ZoneMapKey' -Type DWORD -Value 1 > $null
-    Set-GPRegistryValue -Name 'Intranet_Zonemapping' -Key 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMapKey' -ValueName "\\$env:computername" -Type String -Value 1 > $null
+    Set-GPRegistryValue -Name 'Intranet_Zonemapping' -Key "HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\CurrentVersion\Internet Settings" -ValueName 'ListBox_Support_ZoneMapKey' -Type DWORD -Value 1 > $null
+    Set-GPRegistryValue -Name 'Intranet_Zonemapping' -Key "HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMapKey" -ValueName "\\$env:computername" -Type String -Value 1 > $null
+    Set-GPRegistryValue -Name 'Intranet_Zonemapping' -Key "HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\Domains\$env:computername" -ValueName "file" -Type DWORD -Value 1 > $null
     }
     #set Netzlaufwerke GPO
     [string]$NetzlaufwerkeGUID = (get-gpo -Name Netzlaufwerke).Id
