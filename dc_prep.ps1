@@ -166,6 +166,7 @@ function create_ad_users {
     if ($debug -eq $True) {Write-Host "debug: Userlist not provided, so no user will be created" -ForegroundColor Yellow}
     }
 else {
+    if ($CreateUser -eq "y") {$CreateUser = "$($pwd.path)\users.csv"}
     Write-Host $(Get-Date)"[INFO] Users will be created from provided userlist: $CreateUser"
     $UserPass = Read-Host -AsSecureString "Please provide a initial Password that will be set for every User in this list"
     #detect delimiter of csv
