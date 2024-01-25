@@ -350,7 +350,7 @@ function fslogix {
     $fslogix_path = "$share_drive\_FREIGABEN\FSLogix_Container"
     if ($debug -eq $True) {Write-Host "debug: Using default FSLogix path $fslogix_path" -ForegroundColor Yellow}
     }
-    }
+    
     if (Test-Path $fslogix_path) {if ($debug -eq $True) {
     Write-Host "debug: $fslogix_path already exists" -ForegroundColor Yellow}
     } 
