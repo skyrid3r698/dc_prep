@@ -85,11 +85,13 @@ $everyoneAccount = $([System.Security.Principal.SecurityIdentifier]::new('S-1-1-
 #Find every Terminalserver in the AD 
 $serversWithRDSWithoutADDS = Get-ADComputer -Filter {OperatingSystem -like '*server*'} | ForEach-Object {
     $server = $_.Name
+    if (Test-Connection $server -Count 1) {
     $rdsInstalled = Get-WindowsFeature -ComputerName $server -Name "Remote-Desktop-Services" | Where-Object {$_.Installed -eq $true }
     $addsInstalled = Get-WindowsFeature -ComputerName $server -Name "AD-Domain-Services" | Where-Object {$_.Installed -eq $true }
     if ($rdsInstalled -and -not $addsInstalled) {
         $server
         }
+      }
     }
 
 # activate ad recyclebin
@@ -342,7 +344,7 @@ function adconnect {
 }
 #fully configure FSLogix on DC and all Terminalservers
 function fslogix {
-    if ($FSLogix -match $FSLogix -match "[A-Z]:\\.*") {
+    if ($FSLogix -match "[A-Z]:\\.*") {
     $fslogix_path = "$FSLogix"
     if ($debug -eq $True) {Write-Host "debug: Using custom FSLogix path $fslogix_path" -ForegroundColor Yellow}
     }
