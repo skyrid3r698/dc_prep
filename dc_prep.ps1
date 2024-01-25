@@ -342,11 +342,20 @@ function adconnect {
 }
 #fully configure FSLogix on DC and all Terminalservers
 function fslogix {
-    if (Test-Path $share_drive\_FREIGABEN\FSLogix_Container) {if ($debug -eq $True) {
-    Write-Host "debug: $share_drive\_FREIGABEN\FSLogix_Container already exists" -ForegroundColor Yellow}
+    if ($FSLogix -match $FSLogix -match "[A-Z]:\\.*") {
+    $fslogix_path = "$FSLogix"
+    if ($debug -eq $True) {Write-Host "debug: Using custom FSLogix path $fslogix_path" -ForegroundColor Yellow}
+    }
+    else {
+    $fslogix_path = "$share_drive\_FREIGABEN\FSLogix_Container"
+    if ($debug -eq $True) {Write-Host "debug: Using default FSLogix path $fslogix_path" -ForegroundColor Yellow}
+    }
+    }
+    if (Test-Path $fslogix_path) {if ($debug -eq $True) {
+    Write-Host "debug: $fslogix_path already exists" -ForegroundColor Yellow}
     } 
     else {
-    mkdir $share_drive\_FREIGABEN\FSLogix_Container > $null
+    mkdir $fslogix_path > $null
     }
     #check universial name for Everyone group and create SMB Share
     if (Test-Path \\$env:COMPUTERNAME\FSLogix_Container) {
@@ -355,13 +364,13 @@ function fslogix {
     else {
     $FSLogixShareParams = @{
     Name = "FSLogix_Container"
-    Path = "$share_drive\_FREIGABEN\FSLogix_Container"
+    Path = "$fslogix_path"
     FullAccess = $everyoneAccount
     }
     New-SmbShare @FSLogixShareParams > $null
     }
     #set NTFS ACLs for FSLogix Share
-    $FSLogixACL = Get-Acl -Path "$share_drive\_FREIGABEN\FSLogix_Container"
+    $FSLogixACL = Get-Acl -Path "$fslogix_path"
     $FSLogixACL.SetAccessRuleProtection($true, $false)
     $InheritanceFlag = [System.Security.AccessControl.InheritanceFlags]::ContainerInherit -bor [System.Security.AccessControl.InheritanceFlags]::ObjectInherit
     $PropagationFlag0 = [System.Security.AccessControl.PropagationFlags]::InheritOnly
@@ -375,7 +384,7 @@ function fslogix {
     $FSLogixACL.SetAccessRule($FSLogixAccessRule1)
     $FSLogixACL.SetAccessRule($FSLogixAccessRule2)
     $FSLogixACL.SetAccessRule($FSLogixAccessRule3)
-    Set-Acl -Path "$share_drive\_FREIGABEN\FSLogix_Container" -AclObject $FSLogixACL
+    Set-Acl -Path "$fslogix_path" -AclObject $FSLogixACL
     #download FSLogix Apps and add centralstore admx/adml
     $wc.Downloadfile("https://aka.ms/fslogix_download", "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.zip")
     Expand-Archive -LiteralPath "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.zip" -DestinationPath "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps" -Force
@@ -535,5 +544,5 @@ create_ad_centralstore
 create_ad_users
 if ($datev -eq "y") {datev}
 if ($adconnect -eq "y") {adconnect}
-if ($FSLogix -eq "y") {fslogix}
+if ($FSLogix -eq "y" -or $FSLogix -match "[A-Z]:\\.*") {fslogix}
 check
