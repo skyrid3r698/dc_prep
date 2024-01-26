@@ -308,7 +308,7 @@ function datev {
 '@
     $driveChanged = Get-Date -Format "yyyy-MM-dd hh:mm:ss"
     $driveUID = [guid]::NewGuid()
-    $drivePath = "\\$([System.Net.Dns]::GetHostByName($env:computerName).HostName)\WINDVSW1"
+    $drivePath = "\\$env:computerName\WINDVSW1"
     $driveGroup = "$domainnameshort\DATEVUSER"
     [string]$driveGroupSID = (Get-ADGroup -Identity DATEVUSER).sid
 
