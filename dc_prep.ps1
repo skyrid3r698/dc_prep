@@ -94,7 +94,7 @@ $serversWithRDSWithoutADDS = Get-ADComputer -Filter {OperatingSystem -like '*ser
         }
       }
     else {
-    Write-Host $(Get-Date)"[WARNING] $server is offline and/or decommissioned. Please delete from AD if decomissioned" -ForegroundColor Yellow
+    Write-Host $(Get-Date)"[WARNING] $server is offline. Please delete from AD if decomissioned" -ForegroundColor Yellow
     }
 }
 
