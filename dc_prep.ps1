@@ -82,6 +82,7 @@ $existingUsers = get-aduser -Filter *
 $SYSTEMAccount = $([System.Security.Principal.SecurityIdentifier]::new('S-1-5-18')).Translate([System.Security.Principal.NTAccount]).Value
 $CREATOROWNERAccount = $([System.Security.Principal.SecurityIdentifier]::new('S-1-3-0')).Translate([System.Security.Principal.NTAccount]).Value
 $everyoneAccount = $([System.Security.Principal.SecurityIdentifier]::new('S-1-1-0')).Translate([System.Security.Principal.NTAccount]).Value
+$RDSCollection = (Get-RDSessionCollection).CollectionName
 #Find every Terminalserver in the AD 
 $serversWithRDSWithoutADDS = Get-ADComputer -Filter {OperatingSystem -like '*server*'} | ForEach-Object {
     $server = $_.Name
@@ -530,6 +531,8 @@ function check {
     #if ($datev -eq "y") { if(test-path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\Domains\$env:computername") {Write-Host $(Get-Date)"[INFO] Internet option file:\\$env:computername successfully created"} else {Write-Host $(Get-Date)"[ERROR] Internet option file:\\$env:computername was not set. Please check manually" -ForegroundColor Red; $global:errorcount ++}}
     #adconnect
     if ($adconnect -eq "y") { if([adsi]::Exists("LDAP://CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[INFO] CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $global:errorcount ++}}
+    #RDSession
+    if ($RDSCollection -ne $null) {if ((Get-RDSessionCollectionConfiguration -CollectionName RDSFarm01 -Connection).DisconnectedSessionLimitMin -gt 1) {Write-Host $(Get-Date)"[INFO] RDSessionCollection is configured properly"} else {Write-Host $(Get-Date)"[INFO] RDSessionCollection DisconnectedSessionLimit is not set. It is recommended to set one."}} else {Write-Host $(Get-Date)"[WARNING] No RDSessionCollection is configured. It is recommended to configure a Collection even with one Terminalserver" -ForegroundColor Yellow}
     #summary
     if ($global:errorcount -eq $null) {
         Write-Host $(Get-Date)"[INFO] The Script encountered no errors." -ForegroundColor Green
