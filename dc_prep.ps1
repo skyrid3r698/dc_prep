@@ -83,20 +83,28 @@ $SYSTEMAccount = $([System.Security.Principal.SecurityIdentifier]::new('S-1-5-18
 $CREATOROWNERAccount = $([System.Security.Principal.SecurityIdentifier]::new('S-1-3-0')).Translate([System.Security.Principal.NTAccount]).Value
 $everyoneAccount = $([System.Security.Principal.SecurityIdentifier]::new('S-1-1-0')).Translate([System.Security.Principal.NTAccount]).Value
 $RDSCollection = (Get-RDSessionCollection).CollectionName
-#Find every Terminalserver in the AD 
-$serversWithRDSWithoutADDS = Get-ADComputer -Filter {OperatingSystem -like '*server*'} | ForEach-Object {
+#Find every Terminalserver in the AD + Find RDSBroker
+$brokerInstalled = $null
+$serversWithRDSWithoutADDS = $null
+Get-ADComputer -Filter {OperatingSystem -like '*server*'} | ForEach-Object {
     $server = $_.Name
     if (Test-Connection $server -Count 1 -ErrorAction SilentlyContinue) {
     $rdsInstalled = Get-WindowsFeature -ComputerName $server -Name "Remote-Desktop-Services" | Where-Object {$_.Installed -eq $true }
     $addsInstalled = Get-WindowsFeature -ComputerName $server -Name "AD-Domain-Services" | Where-Object {$_.Installed -eq $true }
     if ($rdsInstalled -and -not $addsInstalled) {
-        $server
-        }
-      }
+    $serversWithRDSWithoutADDS += "$server`n"
+    }
+    if (Get-WindowsFeature -ComputerName $server -Name "RDS-Connection-Broker" | Where-Object {$_.Installed -eq $true }) {
+    $brokerInstalled += "$server`n"
+    }
+    }
+    
     else {
     Write-Host $(Get-Date)"[WARNING] $server is offline. Please delete from AD if decomissioned" -ForegroundColor Yellow
     }
-}
+    }
+$brokerInstalled
+$serversWithRDSWithoutADDS
 
 # activate ad recyclebin
 if ((Get-ADOptionalFeature -Filter 'name -like "Recycle Bin Feature"').EnabledScopes) {
