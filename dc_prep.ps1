@@ -82,7 +82,6 @@ $existingUsers = get-aduser -Filter *
 $SYSTEMAccount = $([System.Security.Principal.SecurityIdentifier]::new('S-1-5-18')).Translate([System.Security.Principal.NTAccount]).Value
 $CREATOROWNERAccount = $([System.Security.Principal.SecurityIdentifier]::new('S-1-3-0')).Translate([System.Security.Principal.NTAccount]).Value
 $everyoneAccount = $([System.Security.Principal.SecurityIdentifier]::new('S-1-1-0')).Translate([System.Security.Principal.NTAccount]).Value
-$RDSCollection = (Get-RDSessionCollection).CollectionName
 #Find every Terminalserver in the AD + Find RDSBroker
 $brokerInstalled = $null
 $serversWithRDSWithoutADDS = $null
@@ -105,6 +104,7 @@ Get-ADComputer -Filter {OperatingSystem -like '*server*'} | ForEach-Object {
     }
 $brokerInstalled
 $serversWithRDSWithoutADDS
+$RDSCollection = Invoke-Command -ComputerName $RDSCollection -ScriptBlock {(Get-RDSessionCollection).CollectionName}
 
 # activate ad recyclebin
 if ((Get-ADOptionalFeature -Filter 'name -like "Recycle Bin Feature"').EnabledScopes) {
@@ -334,15 +334,7 @@ function datev {
     Out-File -FilePath "\\$env:computername\SYSVOL\$domainnamenormal\Policies\{$NetzlaufwerkeGUID}\User\Preferences\Drives\Drives.xml" -Encoding UTF8 -InputObject $Drivesxml -Force
     Add-Content -Path "\\$env:computername\SYSVOL\$domainnamenormal\Policies\{$NetzlaufwerkeGUID}\User\Preferences\Drives\Drives.xml" -Value $driveString 
     Add-Content -Path "\\$env:computername\SYSVOL\$domainnamenormal\Policies\{$NetzlaufwerkeGUID}\User\Preferences\Drives\Drives.xml" -Value "</Drives>"
-#    if (test-path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\Domains\$env:computername") {
-#    if ($debug -eq $True) {Write-Host "debug: Internet option file:\\$env:computername already exists" -ForegroundColor Yellow}
-#    }
-#    else {
-#    New-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\Domains\$env:Computername" > $null
-#    New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\Domains\$env:Computername" -Name "file" -Value 1 -PropertyType DWORD > $null
-#    New-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains\$env:Computername" > $null
-#    New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains\$env:Computername" -Name "file" -Value 1 -PropertyType DWORD > $null
-#    }
+
 }
 #prepare for adconnect
 function adconnect {
