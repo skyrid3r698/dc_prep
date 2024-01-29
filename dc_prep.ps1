@@ -543,6 +543,7 @@ function check {
     #adconnect
     if ($adconnect -eq "y") { if([adsi]::Exists("LDAP://CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[INFO] CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $global:errorcount ++}}
     #RDSession
+    if ($serversWithRDSWithoutADDS -contains $brokerInstalled) {Write-Host $(Get-Date)"[WARNING] RD-Broker is installed on a Terminalserver. This is not Recommended!" -ForegroundColor Yellow}
     if ($RDSCollection -ne $null) {if ((Get-RDSessionCollectionConfiguration -CollectionName RDSFarm01 -Connection).DisconnectedSessionLimitMin -gt 1) {Write-Host $(Get-Date)"[INFO] RDSessionCollection is configured properly"} else {Write-Host $(Get-Date)"[INFO] RDSessionCollection DisconnectedSessionLimit is not set. It is recommended to set one."}} else {Write-Host $(Get-Date)"[WARNING] No RDSessionCollection is configured. It is recommended to configure a Collection even with one Terminalserver" -ForegroundColor Yellow}
     #summary
     if ($global:errorcount -eq $null) {
