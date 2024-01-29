@@ -86,14 +86,17 @@ $RDSCollection = (Get-RDSessionCollection).CollectionName
 #Find every Terminalserver in the AD 
 $serversWithRDSWithoutADDS = Get-ADComputer -Filter {OperatingSystem -like '*server*'} | ForEach-Object {
     $server = $_.Name
-    if (Test-Connection $server -Count 1) {
+    if (Test-Connection $server -Count 1 -ErrorAction SilentlyContinue) {
     $rdsInstalled = Get-WindowsFeature -ComputerName $server -Name "Remote-Desktop-Services" | Where-Object {$_.Installed -eq $true }
     $addsInstalled = Get-WindowsFeature -ComputerName $server -Name "AD-Domain-Services" | Where-Object {$_.Installed -eq $true }
     if ($rdsInstalled -and -not $addsInstalled) {
         $server
         }
       }
+    else {
+    Write-Host $(Get-Date)"[WARNING] $server is offline and/or decommissioned. Please delete from AD if decomissioned" -ForegroundColor Yellow
     }
+}
 
 # activate ad recyclebin
 if ((Get-ADOptionalFeature -Filter 'name -like "Recycle Bin Feature"').EnabledScopes) {
