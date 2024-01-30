@@ -35,7 +35,7 @@ There is a parameter "-debug". This parameter shows alot more information when r
 ### if adconnect: y
 - The Group M365-AD-Connect is bein created under OU "Gruppen"
 - AzureADConnect.exe is being created
-### if FSLogix: y
+### if FSLogix: y or a path is defined like D:\FSLogix_Container
 - $sharedrive\_FREIGABEN\FSLogix_Container is being created
 - NTFS-Rights und Share-Rights are being set for FSLogix_Container with Microsoft specifications
 - The folder FSLogix_Container is being shared
