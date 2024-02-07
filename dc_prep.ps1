@@ -477,6 +477,7 @@ function fslogix {
         else {$FSLogixTERM = Read-Host "The following Terminalservers where found: $serversWithRDSWithoutADDS is that correct? [y/n]"}
     }
     #Install FSLogix on every Terminalserver and add domainadmins to exclude group. And move TS to OU
+    $serversWithRDSWithoutADDS = $serversWithRDSWithoutADDS.Trim()
     ForEach ($RDS in $serversWithRDSWithoutADDS) {
         $RDS_DN = (Get-ADObject -Filter "Name -eq '$RDS'").DistinguishedName
         Move-ADObject -Identity "$RDS_DN" -TargetPath "OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname"
