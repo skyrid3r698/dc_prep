@@ -394,9 +394,9 @@ function fslogix {
     #download FSLogix Apps and add centralstore admx/adml
     $wc.Downloadfile("https://aka.ms/fslogix_download", "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.zip")
     Expand-Archive -LiteralPath "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.zip" -DestinationPath "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps" -Force
-    copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\fslogix.admx \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions
-    copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\fslogix.adml \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\de-DE
-    copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\fslogix.adml \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\en-US
+    copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\fslogix.admx \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\
+    copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\fslogix.adml \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\de-DE\
+    copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\fslogix.adml \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\en-US\
     #prepare redirections.xml to exclude Teams cache
     if (Test-Path $share_drive\_FREIGABEN\FSLogix_RedirXML) {if ($debug -eq $True) {Write-Host "debug: $share_drive\_FREIGABEN\FSLogix_RedirXML already exists" -ForegroundColor Yellow}} else {mkdir $share_drive\_FREIGABEN\FSLogix_RedirXML > $null}
     if (Test-Path \\$env:COMPUTERNAME\FSLogix_RedirXML) {
