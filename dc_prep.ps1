@@ -94,7 +94,7 @@ Get-ADComputer -Filter {OperatingSystem -like '*server*'} | ForEach-Object {
     $serversWithRDSWithoutADDS += "$server`n"
     }
     if (Get-WindowsFeature -ComputerName $server -Name "RDS-Connection-Broker" | Where-Object {$_.Installed -eq $true }) {
-    $brokerInstalled += "$server`n"
+    $brokerInstalled += "$server"
     }
     }
     
@@ -102,9 +102,8 @@ Get-ADComputer -Filter {OperatingSystem -like '*server*'} | ForEach-Object {
     Write-Host $(Get-Date)"[WARNING] $server is offline. Please delete from AD if decomissioned" -ForegroundColor Yellow
     }
     }
-$brokerInstalled
-$serversWithRDSWithoutADDS
-$RDSCollection = Invoke-Command -ComputerName $RDSCollection -ScriptBlock {(Get-RDSessionCollection).CollectionName}
+if ($debug -eq $True) {Write-Host "debug: found Broker -> $brokerInstalled `ndebug: found Terminalservers -> $serversWithRDSWithoutADDS" -ForegroundColor Yellow}
+$RDSCollection = Invoke-Command -ComputerName $brokerInstalled -ScriptBlock {(Get-RDSessionCollection).CollectionName}
 
 # activate ad recyclebin
 if ((Get-ADOptionalFeature -Filter 'name -like "Recycle Bin Feature"').EnabledScopes) {
