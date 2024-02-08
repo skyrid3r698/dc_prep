@@ -102,7 +102,7 @@ Get-ADComputer -Filter {OperatingSystem -like '*server*'} | ForEach-Object {
     Write-Host $(Get-Date)"[WARNING] $server is offline. Please delete from AD if decomissioned" -ForegroundColor Yellow
     }
     }
-if ($debug -eq $True) {Write-Host "debug: found Broker -> $brokerInstalled `ndebug: found Terminalservers -> [array]$serversWithRDSWithoutADDS" -ForegroundColor Yellow}
+if ($debug -eq $True) {Write-Host "debug: found Broker -> $brokerInstalled `ndebug: found Terminalservers -> $serversWithRDSWithoutADDS" -ForegroundColor Yellow}
 $RDSCollection = Invoke-Command -ComputerName $brokerInstalled -ScriptBlock {(Get-RDSessionCollection).CollectionName}
 
 # activate ad recyclebin
