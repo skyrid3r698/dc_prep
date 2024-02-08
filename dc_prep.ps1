@@ -84,14 +84,14 @@ $CREATOROWNERAccount = $([System.Security.Principal.SecurityIdentifier]::new('S-
 $everyoneAccount = $([System.Security.Principal.SecurityIdentifier]::new('S-1-1-0')).Translate([System.Security.Principal.NTAccount]).Value
 #Find every Terminalserver in the AD + Find RDSBroker
 $brokerInstalled = $null
-$serversWithRDSWithoutADDS = $null
+[array]$serversWithRDSWithoutADDS = $null
 Get-ADComputer -Filter {OperatingSystem -like '*server*'} | ForEach-Object {
     $server = $_.Name
     if (Test-Connection $server -Count 1 -ErrorAction SilentlyContinue) {
     $rdsInstalled = Get-WindowsFeature -ComputerName $server -Name "Remote-Desktop-Services" | Where-Object {$_.Installed -eq $true }
     $addsInstalled = Get-WindowsFeature -ComputerName $server -Name "AD-Domain-Services" | Where-Object {$_.Installed -eq $true }
     if ($rdsInstalled -and -not $addsInstalled) {
-    $serversWithRDSWithoutADDS += "$server`n"
+    [array]$serversWithRDSWithoutADDS += "$server"
     }
     if (Get-WindowsFeature -ComputerName $server -Name "RDS-Connection-Broker" | Where-Object {$_.Installed -eq $true }) {
     $brokerInstalled += "$server"
@@ -102,7 +102,7 @@ Get-ADComputer -Filter {OperatingSystem -like '*server*'} | ForEach-Object {
     Write-Host $(Get-Date)"[WARNING] $server is offline. Please delete from AD if decomissioned" -ForegroundColor Yellow
     }
     }
-if ($debug -eq $True) {Write-Host "debug: found Broker -> $brokerInstalled `ndebug: found Terminalservers -> $serversWithRDSWithoutADDS" -ForegroundColor Yellow}
+if ($debug -eq $True) {Write-Host "debug: found Broker -> $brokerInstalled `ndebug: found Terminalservers -> [array]$serversWithRDSWithoutADDS" -ForegroundColor Yellow}
 $RDSCollection = Invoke-Command -ComputerName $brokerInstalled -ScriptBlock {(Get-RDSessionCollection).CollectionName}
 
 # activate ad recyclebin
@@ -476,7 +476,6 @@ function fslogix {
         else {$FSLogixTERM = Read-Host "The following Terminalservers where found: $serversWithRDSWithoutADDS is that correct? [y/n]"}
     }
     #Install FSLogix on every Terminalserver and add domainadmins to exclude group. And move TS to OU
-    $serversWithRDSWithoutADDS = $serversWithRDSWithoutADDS.Trim()
     ForEach ($RDS in $serversWithRDSWithoutADDS) {
         $RDS_DN = (Get-ADObject -Filter "Name -eq '$RDS'").DistinguishedName
         Move-ADObject -Identity "$RDS_DN" -TargetPath "OU=Terminalserver,OU=Computer,OU=$customer_name,$domainname"
@@ -535,7 +534,7 @@ function check {
     #adconnect
     if ($adconnect -eq "y") { if([adsi]::Exists("LDAP://CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname")) {Write-Host $(Get-Date)"[INFO] CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname successfully created"} else {Write-Host $(Get-Date)"[ERROR] CN=M365-AD-Connect,OU=Gruppen,OU=$customer_name,$domainname creation failed" -ForegroundColor Red; $global:errorcount ++}}
     #RDSession
-    if ($serversWithRDSWithoutADDS -contains $brokerInstalled) {Write-Host $(Get-Date)"[WARNING] RD-Broker is installed on a Terminalserver. This is not Recommended!" -ForegroundColor Yellow}
+    if ([array]$serversWithRDSWithoutADDS -contains $brokerInstalled) {Write-Host $(Get-Date)"[WARNING] RD-Broker is installed on a Terminalserver. This is not Recommended!" -ForegroundColor Yellow}
     if ($RDSCollection -ne $null) {if ((Get-RDSessionCollectionConfiguration -CollectionName RDSFarm01 -Connection).DisconnectedSessionLimitMin -gt 1) {Write-Host $(Get-Date)"[INFO] RDSessionCollection is configured properly"} else {Write-Host $(Get-Date)"[INFO] RDSessionCollection DisconnectedSessionLimit is not set. It is recommended to set one."}} else {Write-Host $(Get-Date)"[WARNING] No RDSessionCollection is configured. It is recommended to configure a Collection even with one Terminalserver" -ForegroundColor Yellow}
     #summary
     if ($global:errorcount -eq $null) {
