@@ -72,6 +72,7 @@ else {
 #read extra needed variables
 $Global:errorcount = $null
 $domainnameshort = (Get-ADDomain).NetBIOSName
+$domainnamelong = (Get-ADDomain).Forest
 $GRPAdministrators = (get-adgroup -Identity S-1-5-32-544).Name
 $GRPDomainAdmins = (Get-ADgroup -Identity "$((get-addomain).DomainSID.Value)-512").Name
 $GRPDomainUsers = (Get-ADgroup -Identity "$((get-addomain).DomainSID.Value)-513").Name
@@ -103,7 +104,7 @@ Get-ADComputer -Filter {OperatingSystem -like '*server*'} | ForEach-Object {
     }
     }
 if ($debug -eq $True) {Write-Host "debug: found Broker -> $brokerInstalled `ndebug: found Terminalservers -> $serversWithRDSWithoutADDS" -ForegroundColor Yellow}
-$RDSCollection = Invoke-Command -ComputerName $brokerInstalled -ScriptBlock {(Get-RDSessionCollection).CollectionName}
+$RDSCollection = (Get-RDSessionCollection -ConnectionBroker "$brokerInstalled.$domainnamelong").CollectionName
 
 # activate ad recyclebin
 if ((Get-ADOptionalFeature -Filter 'name -like "Recycle Bin Feature"').EnabledScopes) {
@@ -142,7 +143,7 @@ function create_ad_centralstore {
     if (test-path \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions) {
     if ($debug -eq $True) {Write-Host "debug: centralstore already exists, skipping.." -ForegroundColor Yellow}
     } 
-    else {copy-item C:\Windows\PolicyDefinitions \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\ -Recurse}
+    else {copy-item C:\Windows\PolicyDefinitions\ \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\ -Recurse}
 }
 #create standard ad_poicies
 function create_ad_policies { 
@@ -171,7 +172,7 @@ function create_ad_policies {
     }
     }
     catch {
-    {Write-Host $(Get-Date)"[ERROR] The creation of one or more GPOs has failed. Please check Log" -ForegroundColor Red; $global:errorcount ++}
+    {Write-Host "$(Get-Date)[ERROR] The creation of one or more GPOs has failed. Please check Log" -ForegroundColor Red; $global:errorcount ++}
     }
 }
 #create AD Users if list was provided
@@ -250,14 +251,14 @@ function datev {
     }
     }
     #if WINDVSW1 exists in C:\WINDVSW1
-    if (test-path C:\WINDVSW1) {
+    if ((Get-SmbShare).Name -contains "WINDVSW1") {
     try {
     $RemoveDatevLW = ""
     while(1 -ne 2)
     {
-        if ($RemoveDatevLW -eq "y") {write-host "Deleting..";Remove-Item C:\WINDVSW1 -Recurse;break} 
+        if ($RemoveDatevLW -eq "y") {write-host "Deleting..";Remove-SmbShare -Name WINDVSW1 -Confirm:$false  ; Remove-Item C:\WINDVSW1 -Recurse;break} 
         if ($RemoveDatevLW -eq "n") {write-host "C:\WINDVSW1 will not be deleted. Please check if it is really necessary to keep";break}
-        else {$RemoveDatevLW = Read-Host "C:\WINDVSW1 exists on this System. Do you want to delete it? [y/n]"}
+        else {$RemoveDatevLW = Read-Host "WINDVSW1 Share already exists on this System. Do you want to delete it, including it's directory $((Get-SmbShare -Name WINDVSW1).Path)? [y/n]"}
     }
     }
     catch {
