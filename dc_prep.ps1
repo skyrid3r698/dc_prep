@@ -143,7 +143,10 @@ function create_ad_centralstore {
     if (test-path \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions) {
     if ($debug -eq $True) {Write-Host "debug: centralstore already exists, skipping.." -ForegroundColor Yellow}
     } 
-    else {copy-item C:\Windows\PolicyDefinitions\ \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\ -Recurse}
+    else {
+    mkdir \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions > $null
+    copy-item C:\Windows\PolicyDefinitions\* \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions -Recurse
+    }
 }
 #create standard ad_poicies
 function create_ad_policies { 
