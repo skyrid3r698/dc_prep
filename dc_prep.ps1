@@ -291,7 +291,7 @@ function datev {
     $InheritanceFlag3DATEV = [System.Security.AccessControl.InheritanceFlags]::ObjectInherit
     $PropagationFlag0DATEV = [System.Security.AccessControl.PropagationFlags]::InheritOnly
     $PropagationFlag1DATEV = [System.Security.AccessControl.PropagationFlags]::None
-    $SpecialRightsDATEV = [System.Security.AccessControl.FileSystemRights]::ReadAndExecute -bor [System.Security.AccessControl.FileSystemRights]::AppendData -bor [System.Security.AccessControl.FileSystemRights]::CreateDirectories
+    $SpecialRightsDATEV = [System.Security.AccessControl.FileSystemRights]::ListDirectory -bor [System.Security.AccessControl.FileSystemRights]::ReadAttributes -bor [System.Security.AccessControl.FileSystemRights]::ReadExtendedAttributes -bor [System.Security.AccessControl.FileSystemRights]::CreateDirectories -bor [System.Security.AccessControl.FileSystemRights]::CreateFiles -bor [System.Security.AccessControl.FileSystemRights]::WriteAttributes -bor [System.Security.AccessControl.FileSystemRights]::WriteExtendedAttributes -bor [System.Security.AccessControl.FileSystemRights]::ReadPermissions -bor [System.Security.AccessControl.FileSystemRights]::Delete
     $DATEVAccessRule0 = New-Object System.Security.AccessControl.FileSystemAccessRule("$CREATOROWNERAccount","FullControl","$InheritanceFlagDATEV","$PropagationFlag0DATEV","Allow")
     $DATEVAccessRule1 = New-Object System.Security.AccessControl.FileSystemAccessRule("$GRPAdministrators","FullControl","$InheritanceFlagDATEV","$PropagationFlag1DATEV","Allow")
     $DATEVAccessRule2 = New-Object System.Security.AccessControl.FileSystemAccessRule("$domainnameshort\DATEVUSER","$SpecialRightsDATEV","$InheritanceFlag3DATEV","$PropagationFlag0DATEV","Allow")
