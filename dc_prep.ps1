@@ -168,9 +168,9 @@ function create_ad_policies {
     $wc.Downloadfile("https://msedge.sf.dl.delivery.mp.microsoft.com/filestreamingservice/files/c2c84643-9d5d-4a44-af4c-36a00745bb3a/MicrosoftEdgePolicyTemplates.cab", "C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates.cab")
     expand "C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates.cab" -F:* "C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates.zip" > $null
     Expand-Archive -LiteralPath "C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates.zip" -DestinationPath "C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates" -Force > $null
-    copy-item C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates\windows\admx\*.admx \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions
-    copy-item C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates\windows\admx\de-DE\*.adml \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\de-DE
-    copy-item C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates\windows\admx\en-US\*.adml \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\en-US
+    copy-item C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates\windows\admx\*.admx \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\
+    copy-item C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates\windows\admx\de-DE\*.adml \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\de-DE\
+    copy-item C:\Users\$env:USERNAME\Downloads\MicrosoftEdgePolicyTemplates\windows\admx\en-US\*.adml \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\en-US\
     }
     }
     catch {
