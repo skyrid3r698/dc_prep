@@ -144,8 +144,7 @@ function create_ad_centralstore {
     if ($debug -eq $True) {Write-Host "debug: centralstore already exists, skipping.." -ForegroundColor Yellow}
     } 
     else {
-    mkdir \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions > $null
-    copy-item C:\Windows\PolicyDefinitions\* \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions -Recurse
+    copy-item C:\Windows\PolicyDefinitions \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions -Recurse
     }
 }
 #create standard ad_poicies
@@ -175,7 +174,7 @@ function create_ad_policies {
     }
     }
     catch {
-    {Write-Host "$(Get-Date)[ERROR] The creation of one or more GPOs has failed. Please check Log" -ForegroundColor Red; $global:errorcount ++}
+    {Write-Host $(Get-Date)"[ERROR] The creation of one or more GPOs has failed. Please check Log" -ForegroundColor Red ; $global:errorcount ++}
     }
 }
 #create AD Users if list was provided
