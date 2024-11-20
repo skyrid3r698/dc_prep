@@ -258,7 +258,7 @@ function datev {
     $RemoveDatevLW = ""
     while(1 -ne 2)
     {
-        if ($RemoveDatevLW -eq "y") {write-host "Deleting..";Remove-SmbShare -Name WINDVSW1 -Confirm:$false  ; Remove-Item C:\WINDVSW1 -Recurse;break} 
+        if ($RemoveDatevLW -eq "y") {write-host "Deleting..";Remove-SmbShare -Name WINDVSW1 -Confirm:$false  ; Remove-Item C:\WINDVSW1 -Recurse -Force ; break} 
         if ($RemoveDatevLW -eq "n") {write-host "C:\WINDVSW1 will not be deleted. Please check if it is really necessary to keep";break}
         else {$RemoveDatevLW = Read-Host "WINDVSW1 Share already exists on this System. Do you want to delete it, including it's directory $((Get-SmbShare -Name WINDVSW1).Path)? [y/n]"}
     }
