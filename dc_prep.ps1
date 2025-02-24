@@ -35,6 +35,10 @@ if ($configfile -eq "True") {
         else {$adconnect = Read-Host "Customer name is set to $customer_name. Are you sure you want to configure your main OU with that name? [y/n]"}
     }
     }
+    while ($customer_name -cmatch ",") {
+        $customer_name = Read-Host "customer_name cannot contain a , Please specify another name"
+        }
+
     $datev = (Get-Content $configfilepath)[1].Substring(16)
     $adconnect = (Get-Content $configfilepath)[2].Substring(16)
     $share_drive = (Get-Content $configfilepath)[3].Substring(16)
@@ -209,21 +213,37 @@ else {
         $username = $user.username
         $email = $user.emailadress
         $emaildomain = ($email).Split('@')[-1]
-        if ((Get-ADForest).UPNSuffixes -notcontains $emaildomain) {
-        Get-ADForest | Set-ADForest -UPNSuffixes @{add="$emaildomain"}
+        if ($email -ne "") {
+            if ((Get-ADForest).UPNSuffixes -notcontains $emaildomain) {
+            Get-ADForest | Set-ADForest -UPNSuffixes @{add="$emaildomain"}
+            }
         }
         else {
         if ($debug -eq $True) {Write-Host "debug: UPNSuffix already exists no need to create it" -ForegroundColor Yellow}
         }
+        if ($email -ne "") {
+        #create with email
         try {
-        New-ADUser -GivenName $firstName -Name "$firstName $lastName" -DisplayName "$firstName $lastName" -Surname $lastName -UserPrincipalName $email -EmailAddress $email -Enabled $true -AccountPassword $UserPass -PasswordNeverExpires $true -SamAccountName $username
-        }
-        catch {
-        Write-Host $(Get-Date)"[INFO] Something went wrong while creating $firstName $lastName. Maybe it already exists"
-        }
+            New-ADUser -GivenName $firstName -Name "$firstName $lastName" -DisplayName "$firstName $lastName" -Surname $lastName -UserPrincipalName $email -EmailAddress $email -Enabled $true -AccountPassword $UserPass -PasswordNeverExpires $true -SamAccountName $username
+            }
+            catch {
+            Write-Host $(Get-Date)"[INFO] Something went wrong while creating $firstName $lastName. Maybe it already exists"
+            }
+            }
+        #create without email
+        else {
+        try {
+            New-ADUser -GivenName $firstName -Name "$firstName $lastName" -DisplayName "$firstName $lastName" -Surname $lastName -Enabled $true -AccountPassword $UserPass -PasswordNeverExpires $true -SamAccountName $username
+            }
+            catch {
+            Write-Host $(Get-Date)"[INFO] Something went wrong while creating $firstName $lastName. Maybe it already exists"
+            }
+            }
+            
+         }
+
     }
     }
-}
 
 #create datev share and set ACLs
 function datev {
@@ -252,15 +272,16 @@ function datev {
     Write-Host $(Get-Date)"[ERROR] DATEVOU could not be deleted. Please delete it manually" -ForegroundColor Red; $global:errorcount ++
     }
     }
-    #if WINDVSW1 exists in C:\WINDVSW1
+    #if WINDVSW1 exists
     if ((Get-SmbShare).Name -contains "WINDVSW1") {
+    $currentwindvsw1 = (Get-SmbShare -Name WINDVSW1).path
     try {
     $RemoveDatevLW = ""
     while(1 -ne 2)
     {
         if ($RemoveDatevLW -eq "y") {write-host "Deleting..";Remove-SmbShare -Name WINDVSW1 -Confirm:$false  ; Remove-Item C:\WINDVSW1 -Recurse -Force ; break} 
-        if ($RemoveDatevLW -eq "n") {write-host "C:\WINDVSW1 will not be deleted. Please check if it is really necessary to keep";break}
-        else {$RemoveDatevLW = Read-Host "WINDVSW1 Share already exists on this System. Do you want to delete it, including it's directory $((Get-SmbShare -Name WINDVSW1).Path)? [y/n]"}
+        if ($RemoveDatevLW -eq "n") {write-host "$currentwindvsw1 will not be deleted. Please check if it is really necessary to keep";break}
+        else {$RemoveDatevLW = Read-Host "WINDVSW1 Share already exists on this System. Do you want to delete it, including it's directory $currentwindvsw1? [y/n]"}
     }
     }
     catch {
@@ -396,6 +417,8 @@ function fslogix {
     #download FSLogix Apps and add centralstore admx/adml
     $wc.Downloadfile("https://aka.ms/fslogix_download", "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.zip")
     Expand-Archive -LiteralPath "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps.zip" -DestinationPath "C:\Users\$env:USERNAME\Downloads\FSLogix_Apps" -Force
+    if (!(Test-Path \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\de-DE)) { mkdir \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\de-DE > $null}
+    if (!(Test-Path \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\en-US)) { mkdir \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\en-US > $null}
     copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\fslogix.admx \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\
     copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\fslogix.adml \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\de-DE\
     copy-item C:\Users\$env:USERNAME\Downloads\FSLogix_Apps\fslogix.adml \\localhost\sysvol\$((Get-ADDomain).DNSRoot)\Policies\PolicyDefinitions\en-US\
